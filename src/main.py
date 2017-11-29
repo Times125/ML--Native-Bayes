@@ -7,7 +7,9 @@
 @Description:
 
 """
-from bayes import *
+__author__ = 'Lich'
+
+from src.bayes import *
 
 def main():
     post_list, class_vec = load_data_set()
@@ -18,10 +20,10 @@ def main():
         temp = create_word_to_vec(ls, post_doc)
         print temp, len(temp)
         matrix.append(temp)
-    p0,p1,p_bad = train_native_bayes(matrix, class_vec)
+    p0, p1, p_bad = train_native_bayes(matrix, class_vec)
     print p0,p1
     test = ['dog', 'good', 'nice']
-    doc_vec = create_word_to_vec(ls,test)
+    doc_vec = create_word_to_vec(ls, test)
     res = classify_native_bayes(doc_vec, p0, p1, p_bad)
     print res
 

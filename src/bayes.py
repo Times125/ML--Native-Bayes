@@ -6,6 +6,8 @@
 @Time:  2017/11/22 11:42
 @Description: 
 """
+__author__ = 'Lich'
+
 from numpy import *
 
 def load_data_set():
@@ -21,7 +23,7 @@ def load_data_set():
 
 '''
 传入语料集合
-返回一个不重复的词条列表
+返回一个不重复的包含所有词项的词条列表
 '''
 def create_vocab_list(data_set):
     vocab_set = set([])  # 创建一个空set
@@ -45,7 +47,6 @@ def create_word_to_vec(vocab_list, input_set):
     return vec
 
 '''
-传入训练集（已经转为向量），分类标签向量
 朴素贝叶斯分类器训练
 '''
 def train_native_bayes(train_matrix, category):
@@ -79,3 +80,8 @@ def classify_native_bayes(doc_vec, p0_vec, p1_vec, class_bad):
     else:
         return 1
 
+'''
+将输入文本转为词条列表输出
+'''
+def text_to_word_list(iput_text):
+    pass

@@ -53,10 +53,30 @@ def text_parse(input_text):
 def get_features(input_matrix_data):
     input_matrix = input_matrix_data
     words_count_matrix = get_lemmatizer(input_matrix)
-    calculate_tf(input_matrix, words_count_matrix)
+    res = calculate_tf(input_matrix, words_count_matrix)
 
     for i in range(0, 20):
-        print words_count_matrix[i]
+        print words_count_matrix[i].items()
+
+
+'''
+计算词频
+'''
+
+
+def calculate_tf(word_matrix, words_count_matrix):
+    res = []
+    
+    return res
+
+
+'''
+计算逆文档频率
+'''
+
+
+def calculate_idf():
+    pass
 
 
 ''''
@@ -88,24 +108,6 @@ def get_stem(input_matrix):
         for item in lst:
             stemmed.append(stemmer.stem(item))  # 词干提取
         words_count.append(Counter(stemmed))  # 计算每个词在其文本中出现的次数
-
-
-'''
-计算词频
-'''
-
-
-def calculate_tf(word_matrix, words_count_matrix):
-    pass
-
-
-'''
-计算逆文档频率
-'''
-
-
-def calculate_idf():
-    pass
 
 
 '''

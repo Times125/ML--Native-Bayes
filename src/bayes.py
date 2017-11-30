@@ -4,7 +4,7 @@
 """
 @Author:Lich
 @Time:  2017/11/22 11:42
-@Description: 
+@Description: 《机器学习实战》 课堂代码
 """
 __author__ = 'Lich'
 

@@ -1,10 +1,10 @@
 #! /usr/bin/env python
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 """
 @Author:Lich
 @Time:  2017/11/29 10:35
-@Description: 利用朴素贝叶斯分类器对邮件进行分类
+@Description: 利用朴素贝叶斯分类器对新闻文本进行分类
 """
 from collections import Counter
 
@@ -13,6 +13,11 @@ from nltk.corpus import *
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import *
+from numpy import *
+
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 __author__ = 'Lich'
 
@@ -23,7 +28,8 @@ __author__ = 'Lich'
 
 def text_parse(input_text):
     sentence = input_text.lower()
-    special_tag = ['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"']
+    vocab_set = set([])  # 记录所有出现的单词
+    special_tag = ['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’']
     pattern = r""" (?x)(?:[A-Z]\.)+ 
                   | \d+(?:\.\d+)?%?\w+
                   | \w+(?:[-']\w+)*
@@ -42,32 +48,56 @@ def text_parse(input_text):
             pass
         else:
             res_word_list.append(word_tag[i][0])
-    return res_word_list
+            vocab_set.add(word_tag[i][0])
+    return res_word_list, vocab_set
 
 
 '''
 提取文本特征，TF-IDF算法（这里利用词形还原（也可以利用词干提取））
+返回每篇文章的特征值集合[['a','b'],['c','d'],...,['y',['z']]]
 '''
 
 
-def get_features(input_matrix_data):
+def get_doc_features(input_matrix_data, vocab_set):
     input_matrix = input_matrix_data
     words_count_matrix = get_lemmatizer(input_matrix)
-    res = calculate_tf(input_matrix, words_count_matrix)
+    n_contain_dict = calculate_d(input_matrix, vocab_set)
+    doc_nums = len(input_matrix)  # 输入的文档总数
+    words_tf = calculate_tf(words_count_matrix)
+    words_idf = calculate_idf(doc_nums, n_contain_dict)
 
-    for i in range(0, 20):
-        print words_count_matrix[i].items()
+    print  words_tf
+    print('\n\n')
+    print words_idf
 
 
 '''
-计算词频
+计算包含某单词a 的文档数目
 '''
 
 
-def calculate_tf(word_matrix, words_count_matrix):
-    res = []
-    
-    return res
+def calculate_d(words_count_matrix, vocab_set):
+    n_contain_dict = {}  # 包含此单词的文档数目
+    for word in vocab_set:
+        n = sum(1 for lst in words_count_matrix if word in lst)
+        n_contain_dict[word] = n
+    return n_contain_dict
+
+
+'''
+计算词频,一个单词在某个文档A中出现的频率
+'''
+
+
+def calculate_tf(words_count_matrix):
+    res_list = []
+    for lst in words_count_matrix:
+        tf_dict = {}
+        for word in lst.keys():
+            tf_dict[word] = lst[word] / float(sum(lst.values()))  # 计算词频
+        res_list.append(tf_dict)
+        del tf_dict
+    return res_list
 
 
 '''
@@ -75,8 +105,11 @@ def calculate_tf(word_matrix, words_count_matrix):
 '''
 
 
-def calculate_idf():
-    pass
+def calculate_idf(doc_nums, n_contain_dict):
+    idf_dict = {}
+    for word in n_contain_dict.keys():
+        idf_dict[word] = log(doc_nums / n_contain_dict[word])
+    return idf_dict
 
 
 ''''
@@ -86,12 +119,13 @@ def calculate_idf():
 
 def get_lemmatizer(input_matrix):
     words_count = []
+    lemmated = []
     lemmatizer = WordNetLemmatizer()  # 词形还原
     for lst in input_matrix:
-        lemmated = []
         for item in lst:
             lemmated.append(lemmatizer.lemmatize(item))  # 词形还原
         words_count.append(Counter(lemmated))  # 计算每个词在其文本中出现的次数
+        del lemmated[:]
     return words_count
 
 
@@ -102,12 +136,14 @@ def get_lemmatizer(input_matrix):
 
 def get_stem(input_matrix):
     words_count = []
+    stemmed = []
     stemmer = PorterStemmer()  # 词干提取
     for lst in input_matrix:
-        stemmed = []
         for item in lst:
             stemmed.append(stemmer.stem(item))  # 词干提取
         words_count.append(Counter(stemmed))  # 计算每个词在其文本中出现的次数
+        del stemmed[:]
+    return words_count
 
 
 '''

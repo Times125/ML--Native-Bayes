@@ -94,7 +94,7 @@ def calculate_tf_idf(doc_nums, words_tf, words_idf):
         for word in words_tf[i]:
             tf_idf_dict[word] = (words_tf[i][word] * words_idf[word])
         res.append(tf_idf_dict)
-        sorted_res.append(sorted(tf_idf_dict.items(), lambda x, y: cmp(x[1], y[1]), reverse=True))
+        sorted_res.append(sorted(tf_idf_dict.items(), lambda x, y: cmp(x[1], y[1]), reverse=True))  # 按照tf-idf 值从大到小进行排序
         del tf_idf_dict
     return res, sorted_res
 
@@ -143,6 +143,8 @@ def calculate_idf(doc_nums, n_contain_dict):
         idf_dict[word] = log(doc_nums / (n_contain_dict[word]))
     return idf_dict
 
-
+'''
+训练器
+'''
 def train_native_bayes_classifier():
     pass

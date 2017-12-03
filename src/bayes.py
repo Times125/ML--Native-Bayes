@@ -44,6 +44,7 @@ def create_word_to_vec(vocab_list, input_set):
             pass
     return vec
 
+
 '''
 传入训练集（已经转为向量），分类标签向量
 朴素贝叶斯分类器训练

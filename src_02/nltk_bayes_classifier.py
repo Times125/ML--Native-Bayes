@@ -22,9 +22,9 @@ sys.setdefaultencoding('utf8')
 
 __author__ = 'Lich'
 
-"""
+'''
 文本处理
-"""
+'''
 
 
 def text_parse(input_text):
@@ -69,12 +69,12 @@ def get_doc_features(input_matrix_data, vocab_set):
     words_idf = calculate_idf(doc_nums, n_contain_dict)  # 计算逆文档
     words_tf_idf, sorted_tf_idf = calculate_tf_idf(doc_nums, words_tf, words_idf)  # 计算一篇文档中单词的tf-idf值
 
-    # 取特征：设置阈值,取tf-idf值大于0.007,这个阈值需要根据分类结果进行调整
+    # 取特征：设置阈值,取tf-idf值大于0.008,这个阈值需要根据分类结果进行调整
     doc_features = []
     for i in range(0, len(sorted_tf_idf)):
         tmp = []
         for tuple_w in sorted_tf_idf[i]:
-            if tuple_w[1] >= 0.007:
+            if tuple_w[1] >= 0.008:
                 tmp.append(tuple_w[0])
         doc_features.append(tmp)
         del tmp
@@ -143,8 +143,24 @@ def calculate_idf(doc_nums, n_contain_dict):
         idf_dict[word] = log(doc_nums / (n_contain_dict[word]))
     return idf_dict
 
+
 '''
-训练器
+朴素贝叶斯分类器
 '''
-def train_native_bayes_classifier():
+
+
+def native_bayes_classifier(train_docs_features,vocab_set):
+    categories = ['env', 'eco', 'pol']
+    # [(['env', 'eco', 'pol'], 'env'), (['env', 'eco', 'pol'], 'eco'), (['env', 'eco', 'pol'], 'pol')]
+    documents = [(list(doc_features(word)), category) for category in categories for word in vocab_set]
+    print  documents
+    # classifier = nltk.classify.NaiveBayesClassifier.train(docs_features)
     pass
+
+'''
+获得
+'''
+def doc_features(word,train_docs_features):
+    features = {}
+    for word in train_docs_features:
+        features[word] = word

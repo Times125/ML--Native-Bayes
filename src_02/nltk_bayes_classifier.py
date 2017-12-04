@@ -75,7 +75,7 @@ def native_bayes_classifier(features, post_list, vocab_set=None):
 
 
 '''
-获得
+构建一个字典，主要表示输入文档的单词，是否出现在自己构建的语料库中
 '''
 
 

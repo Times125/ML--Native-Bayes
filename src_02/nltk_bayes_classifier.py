@@ -1,166 +1,94 @@
 #! /usr/bin/env python
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 
 """
 @Author:Lich
-@Time:  2017/11/29 10:35
-@Description: 利用朴素贝叶斯分类器对新闻文本进行分类
+@Time:  2017/12/4 10:53
+@Description: 
 """
-from collections import Counter
-
 import nltk
-from nltk.corpus import *
-from nltk.stem import WordNetLemmatizer
-from nltk.stem.porter import PorterStemmer
-from nltk.tokenize import *
-from numpy import *
-
-import sys
-
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 __author__ = 'Lich'
 
 '''
-文本处理
-'''
-
-
-def text_parse(input_text):
-    sentence = input_text.lower()
-    lemmatizer = WordNetLemmatizer()  # 词形还原
-    vocab_set = set([])  # 记录所有出现的单词
-    special_tag = ['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’']
-    pattern = r""" (?x)(?:[A-Z]\.)+ 
-                  | \d+(?:\.\d+)?%?\w+
-                  | \w+(?:[-']\w+)*
-                  | (?:[,.;'"?():-_`])"""
-
-    word_list = regexp_tokenize(sentence, pattern)
-    filter_word = [w for w in word_list if w not in stopwords.words('english') and w not in special_tag]  # 去停用词和特殊标点符号
-    word_tag = nltk.pos_tag(filter_word)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')]
-    res_word_list = []
-    for i in range(0, len(word_tag)):  # 去掉副词、介词、小品词、疑问词、代词、人称代词、所有格代名词等
-        if word_tag[i][1] == 'TO' or word_tag[i][1] == 'RB' or word_tag[i][1] == 'RBR' \
-                or word_tag[i][1] == 'RBRS' or word_tag[i][1] == 'UH' or word_tag[i][1] == 'WDT' \
-                or word_tag[i][1] == 'WP' or word_tag[i][1] == 'WP$' or word_tag[i][1] == 'WRB' \
-                or word_tag[i][1] == 'SYM' or word_tag[i][1] == 'RP' or word_tag[i][1] == 'PRP' \
-                or word_tag[i][1] == 'PRP$' or word_tag[i][1] == 'CD':
-            pass
-        else:
-            word = lemmatizer.lemmatize(word_tag[i][0])
-            res_word_list.append(word)
-            vocab_set.add(word)
-    return res_word_list, vocab_set
-
-
-'''
-提取文本特征，TF-IDF算法（这里利用词形还原（也可以利用词干提取））
-返回每篇文章的特征值集合[['a','b'],['c','d'],...,['y',['z']]]
-'''
-
-
-def get_doc_features(input_matrix_data, vocab_set):
-    input_matrix = input_matrix_data
-    doc_nums = len(input_matrix)  # 输入的文档总数
-    words_tf, words_count_matrix = calculate_tf(input_matrix)  # 计算词频
-    n_contain_dict = calculate_d(words_count_matrix, vocab_set)  # 计算包含某单词a 的文档数目
-    words_idf = calculate_idf(doc_nums, n_contain_dict)  # 计算逆文档
-    words_tf_idf, sorted_tf_idf = calculate_tf_idf(doc_nums, words_tf, words_idf)  # 计算一篇文档中单词的tf-idf值
-
-    # 取特征：设置阈值,取tf-idf值大于0.008,这个阈值需要根据分类结果进行调整
-    doc_features = []
-    for i in range(0, len(sorted_tf_idf)):
-        tmp = []
-        for tuple_w in sorted_tf_idf[i]:
-            if tuple_w[1] >= 0.008:
-                tmp.append(tuple_w[0])
-        doc_features.append(tmp)
-        del tmp
-    return doc_features
-
-
-'''
-计算TF-IDF
-'''
-
-
-def calculate_tf_idf(doc_nums, words_tf, words_idf):
-    res = []
-    sorted_res = []
-    for i in range(0, doc_nums):
-        tf_idf_dict = {}
-        for word in words_tf[i]:
-            tf_idf_dict[word] = (words_tf[i][word] * words_idf[word])
-        res.append(tf_idf_dict)
-        sorted_res.append(sorted(tf_idf_dict.items(), lambda x, y: cmp(x[1], y[1]), reverse=True))  # 按照tf-idf 值从大到小进行排序
-        del tf_idf_dict
-    return res, sorted_res
-
-
-'''
-计算包含某单词a 的文档数目
-'''
-
-
-def calculate_d(words_count_matrix, vocab_set):
-    n_contain_dict = {}  # 包含此单词的文档数目
-    for word in vocab_set:
-        n = sum(1 for lst in words_count_matrix if word in lst)
-        n_contain_dict[word] = n
-    return n_contain_dict
-
-
-'''
-计算词频,一个单词在某个文档A中出现的频率
-'''
-
-
-def calculate_tf(input_matrix):
-    res_list = []
-    words_count = []
-    for lst in input_matrix:
-        words_count.append(Counter(lst))
-
-    for lst in words_count:
-        tf_dict = {}
-        for word in lst.keys():
-            tf_dict[word] = lst[word] / float(sum(lst.values()))  # 计算词频
-        res_list.append(tf_dict)
-        del tf_dict
-    return res_list, words_count
-
-
-'''
-计算逆文档频率
-'''
-
-
-def calculate_idf(doc_nums, n_contain_dict):
-    idf_dict = {}
-    for word in n_contain_dict.keys():
-        idf_dict[word] = log(doc_nums / (n_contain_dict[word]))
-    return idf_dict
-
-
-'''
 朴素贝叶斯分类器
 '''
+categories = ['env', 'eco', 'pol']
+train_set = []
+test_set = []
 
 
-def native_bayes_classifier(train_docs_features,vocab_set):
-    categories = ['env', 'eco', 'pol']
-    # [(['env', 'eco', 'pol'], 'env'), (['env', 'eco', 'pol'], 'eco'), (['env', 'eco', 'pol'], 'pol')]
-    documents = [(list(doc_features(word)), category) for category in categories for word in vocab_set]
-    print  documents
-    # classifier = nltk.classify.NaiveBayesClassifier.train(docs_features)
-    pass
+def native_bayes_classifier(features, post_list, vocab_set=None):
+    global word_features
+    word_features = features
+
+    train_set = post_list[::2]
+    test_set = post_list[1::2]
+    train_data = [(doc_features(doc, category), category) for (doc, category) in train_set]
+    test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
+
+    # print train_set, '\n\n'
+    # print test_set, '\n\n'
+    # print train_data, '\n\n'
+    # print test_data
+    # print len(train_set), len(test_set)
+    env_tmp = {u'contains(abundance)': False, u'contains(climate)': True, u'contains(michelle)': False,
+               u'contains(trump-owned)': False, u'contains(weight)': False, u'contains(mass)': False,
+               u'contains(atmospheric)': False, u'contains(strongest)': False, u'contains(rock)': False,
+               u'contains(enabled)': False, u'contains(concept)': False, u'contains(platoon)': False,
+               u'contains(risk)': False, u'contains(chile)': False, u'contains(population)': False,
+               u'contains(moment)': False, u'contains(consultation)': False, u'contains(marcelo)': False,
+               u'contains(declared)': False, u'contains(occurs)': False, u'contains(exalted)': False,
+               u'contains(tropical)': True, u'contains(creation)': False, u'contains(flooding)': False,
+               u'contains(strength)': True, u'contains(storm)': True}
+    pol_tmp = {u'contains(suing)': False, u'contains(insurance)': False, u"contains(city's)": False,
+               u'contains(subsidy)': False, u'contains(janelle)': False, u'contains(cradle)': False,
+               u'contains(washington)': False, u'contains(white)': True, u'contains(politics)': False,
+               u'contains(mr)': True, u"contains(baltimore's)": False, u'contains(wall)': False,
+               u'contains(trade)': False, u'contains(fact-check)': False, u'contains(capitol)': False,
+               u'contains(warned)': False, u'contains(tower)': False, u'contains(cancellation)': False,
+               u'contains(kuttner)': False, u'contains(marched)': False, u'contains(fringe)': False,
+               u'contains(hate)': False, u'contains(growing)': False, u'contains(trump)': True}
+    pol_tmp2 = {u'contains(percent)': False, u'contains(cost-sharing)': False, u'contains(center)': False,
+                u'contains(mayor)': False, u'contains(paula)': False, u'contains(ellen)': False,
+                u'contains(rally)': True, u'contains(lindsey)': False, u'contains(alt-left)': False,
+                u'contains(prospect)': False, u'contains(encourage)': False, u'contains(covering)': False,
+                u'contains(renaming)': False, u'contains(lee)': False, u'contains(county)': False,
+                u'contains(payment)': False, u'contains(attorney)': False, u'contains(treason)': False,
+                u'contains(attack)': False, u'contains(help)': False, u'contains(obamacare)': False,
+                u'contains(alabama)': False, u'contains(neo-nazis)': False, u'contains(blackened)': False,
+                u'contains(e)': False, u"contains(he's)": False, u'contains(military)': False,
+                u'contains(william)': False, u'contains(equivalency)': False, u'contains(guilt)': False,
+                u'contains(strategist)': False, u'contains(flag)': False, u'contains(gotta)': False,
+                u'contains(seeing)': False, u'contains(press)': False, u'contains(child)': False,
+                u"contains(it's)": False, u'contains(diehl)': False, u'contains(courthouse)': False,
+                u'contains(legislation)': False, u'contains(identity)': False, u'contains(re-ignited)': False,
+                u'contains(statue)': False, u'contains(jefferson)': False}
+
+    classifier = nltk.classify.NaiveBayesClassifier.train(test_data)
+    for i in range(0,len(test_data)):
+        print '分类结果', classifier.classify(test_data[i][0])
+    print 'env_tmp is ', classifier.classify(env_tmp)
+    print 'pol_tmp is', classifier.classify(pol_tmp)
+    print 'pol_tmp2 is', classifier.classify(pol_tmp2)
+    print 'test_accuracy is %d' % nltk.classify.accuracy(classifier, train_data)
+
 
 '''
 获得
 '''
-def doc_features(word,train_docs_features):
+
+
+def doc_features(doc, category):
+    doc_words = set(doc)
     features = {}
-    for word in train_docs_features:
-        features[word] = word
+    if category == 'env':
+        for word in word_features[0][0]:
+            features['contains(%s)' % word] = (word in doc_words)
+    elif category == 'eco':
+        for word in word_features[1][0]:
+            features['contains(%s)' % word] = (word in doc_words)
+    elif category == 'pol':
+        for word in word_features[2][0]:
+            features['contains(%s)' % word] = (word in doc_words)
+    return features

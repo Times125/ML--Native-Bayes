@@ -9,42 +9,22 @@
 __author__ = 'Lich'
 
 from nltk_bayes_classifier import *
+from text_processing import *
 
 
 def main():
-    post_list = []
-    vocab_set = set([])
-    a = 0
+    features = get_class_features()  # 这是自己建立的语料库
     dirs = ['env', 'eco', 'pol']
-    categories = []
-    env = []
-    eco = []
-    pol = []
-    for name in dirs:
-        for i in range(1, 6):
+    vocab_set = set([])
+    post_list = []
+    for dir_name in dirs:
+        for i in range(7, 11):
             res_word_list, doc_set = text_parse(
-                open(u'/Users/lch/Desktop/pycharm/Bayes/test/' + name + u'/%d.txt' % i).read().decode('utf-8'))
-            post_list.append(res_word_list)
+                open(r'G:\Repositories\ML--Native-Bayes\test\\' + dir_name + r'\%d.txt' % i).read().decode(
+                    'utf-8'))  # 读取测试文本
+            post_list.append((res_word_list, dir_name))  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
             vocab_set = vocab_set | doc_set
-            categories.append(name)
-            a += len(doc_set)
-    print '文本去除停用词、词形还原后还剩余', len(list(vocab_set)), '个不重复单词。', '\n文本去除停用词后所有文本共含有', a, '个单词'
-
-    train_docs_features = get_doc_features(post_list, vocab_set)
-    features = []
-    for i in range(0, len(train_docs_features)):
-        if categories[i] == 'env':
-            env.extend(train_docs_features[i])
-        elif categories[i] == 'eco':
-            eco.extend(train_docs_features[i])
-        elif categories == 'pol':
-            pol.extend(train_docs_features[i])
-
-        features.append((train_docs_features[i], categories[i]))
-        # print train_docs_features[i], '\n'
-    print env
-    # native_bayes_classifier(docs_features, vocab_set)
-
+    native_bayes_classifier(features, post_list, vocab_set)
 
 if __name__ == '__main__':
     main()

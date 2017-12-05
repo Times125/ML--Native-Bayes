@@ -7,14 +7,19 @@
 @Description: 文本处理，构建自己的新闻语料库
 """
 
-
+import Queue
+import codecs
+import time
+import os
+import nltk
 from collections import Counter
-from nltk.corpus import *
+from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import *
 from numpy import *
-import nltk
+import threading
 import sys
+
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -24,27 +29,22 @@ __author__ = 'Lich'
 文本处理，包括分词，去停用词、去无用词、词形还原等
 '''
 
-
 def text_parse(input_text):
     sentence = input_text.lower()
     lemmatizer = WordNetLemmatizer()  # 词形还原
     vocab_set = set([])  # 记录所有出现的单词
-    special_tag = ['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’']
+    special_tag = ['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’', '“', '”', '！', '：', '^', '/']
     pattern = r""" (?x)(?:[A-Z]\.)+ 
                   | \d+(?:\.\d+)?%?\w+
                   | \w+(?:[-']\w+)*
                   | (?:[,.;'"?():-_`])"""
-
+    tag_list = ['TO', 'RB', 'RBR', 'RBRS', 'UH', 'WDT', 'WP', 'WP$', 'WRB', 'SYM', 'RP', 'PRP', 'PRP$', 'CD']
     word_list = regexp_tokenize(sentence, pattern)
     filter_word = [w for w in word_list if w not in stopwords.words('english') and w not in special_tag]  # 去停用词和特殊标点符号
     word_tag = nltk.pos_tag(filter_word)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')]
     res_word_list = []
     for i in range(0, len(word_tag)):  # 去掉副词、介词、小品词、疑问词、代词、人称代词、所有格代名词等
-        if word_tag[i][1] == 'TO' or word_tag[i][1] == 'RB' or word_tag[i][1] == 'RBR' \
-                or word_tag[i][1] == 'RBRS' or word_tag[i][1] == 'UH' or word_tag[i][1] == 'WDT' \
-                or word_tag[i][1] == 'WP' or word_tag[i][1] == 'WP$' or word_tag[i][1] == 'WRB' \
-                or word_tag[i][1] == 'SYM' or word_tag[i][1] == 'RP' or word_tag[i][1] == 'PRP' \
-                or word_tag[i][1] == 'PRP$' or word_tag[i][1] == 'CD':
+        if word_tag[i][1] in tag_list:
             pass
         else:
             word = lemmatizer.lemmatize(word_tag[i][0])
@@ -61,6 +61,8 @@ def text_parse(input_text):
 
 
 def get_doc_features(input_matrix_data, vocab_set, threshold=0.008):
+
+    start_time = time.time()
     input_matrix = input_matrix_data
     doc_nums = len(input_matrix)  # 输入的文档总数
     words_tf, words_count_matrix = calculate_tf(input_matrix)  # 计算词频
@@ -77,6 +79,8 @@ def get_doc_features(input_matrix_data, vocab_set, threshold=0.008):
                 tmp.append(tuple_w[0])
         doc_features.append(tmp)
         del tmp
+    end_time = time.time()
+    print 'method get_doc_features() cost total time %0.4f seconds' % (end_time - start_time)
     return doc_features
 
 
@@ -149,23 +153,58 @@ def calculate_idf(doc_nums, n_contain_dict):
 
 
 def get_class_features():
+    start_time = time.time()
+    win_path = r'G:\Repositories\ML--Native-Bayes\material\\'
+    mac_path = r'/Users/lch/Desktop/pycharm/Bayes/material/'
+    files_list = []
     post_list = []
+    mpost_list = []
     vocab_set = set([])
+    total_vocab_set = set([])
     dirs = ['env', 'eco', 'pol']
     features = []
     categories = []
     env = []
     eco = []
     pol = []
+    q = Queue.Queue()
+    # 多线程读文件
+    for item in dirs:
+        file_path = win_path + item
+        t = threading.Thread(target=read_file, args=(file_path, item, q))
+        t.start()
+    t.join()  # 同步
+    while not q.empty():
+        files_list.append(q.get(True))  # 获取读文件的内容
+    # print files_list[0][0][0], '\n\n', files_list[0][0][1], '\n\n', files_list[0][0][2]
+
+    for tup in files_list:
+        total_vocab_set = total_vocab_set | tup[1]  # 计算所有类别新闻包含的总的不重复的单词数
+        post_list.extend(tup[0])
+        if tup[2] == 'env':
+            pass
+        elif tup[2] == 'eco':
+            pass
+        elif tup[2] == 'pol':
+            pass
+
+
+    # 程序耗时部分2
     for dir_name in dirs:
-        for i in range(1, 6):
-            res_word_list, doc_set = text_parse(open(r'G:\Repositories\ML--Native-Bayes\material\\' + dir_name + r'\%d.txt' % i).read().decode('utf-8'))
-            # open(u'/Users/lch/Desktop/pycharm/Bayes/material/' + name + u'/%d.txt' % i).read().decode('utf-8'))
-            post_list.append(res_word_list)
+        for i in range(1, 11):
+            f = codecs.open(win_path + dir_name + r'\%d.txt' % i, 'rb', 'utf-8')
+            txt = f.read()  # .decode('utf-8')
+            f.close()
+            res_word_list, doc_set = text_parse(txt)
+            mpost_list.append(res_word_list)
             vocab_set = vocab_set | doc_set
             categories.append(dir_name)
     print '文本去除停用词、词形还原后还剩余', len(list(vocab_set)), '个不重复单词。'
-    docs_features = get_doc_features(post_list, vocab_set, 0.015)
+    # 程序耗时部分2
+
+
+    print '文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), '个不重复单词。'
+    docs_features = get_doc_features(mpost_list, vocab_set, 0.015)
     for i in range(0, len(categories)):
         if categories[i] == 'env':
             env.extend(docs_features[i])
@@ -175,8 +214,29 @@ def get_class_features():
             pol.extend(docs_features[i])
         else:
             pass
-
     features.append((env, 'env'))
     features.append((eco, 'eco'))
     features.append((pol, 'pol'))
+
+    end_time = time.time()
+    print 'method get_class_features() cost total time %0.4f seconds' % (end_time - start_time)
     return features
+
+
+'''
+读取某一类文件夹的所有文件
+'''
+
+
+def read_file(path_name, category, queue):
+    path_dir = os.listdir(path_name)
+    vocab_set = set([])
+    content_list = []
+    for fn in path_dir:
+        f = codecs.open(os.path.join(path_name, fn), 'rb', 'utf-8')
+        txt = f.read().decode('utf-8')
+        f.close()
+        res_word_list, doc_set = text_parse(txt)
+        vocab_set = vocab_set | doc_set
+        content_list.append(res_word_list)
+    queue.put((content_list, vocab_set, category))  # 包含了： （每篇新闻处理后的结果[[],[]]，这一类新闻所含的单词集set()，这一类新闻的类别str）

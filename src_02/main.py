@@ -21,6 +21,7 @@ def main():
     dirs = ['env', 'eco', 'pol']
     vocab_set = set([])
     post_list = []
+    '''
     # 程序耗时部分1
     for dir_name in dirs:
         for i in range(7, 11):
@@ -32,6 +33,7 @@ def main():
     mid_time = time.time()
     print 'read test files cost total time %.4f seconds' % (mid_time - mid_time2)
     native_bayes_classifier(features, post_list, vocab_set)
+    '''
     end_time = time.time()
     print 'method main() cost total time %.4f seconds' % (end_time - start_time)
 
@@ -39,7 +41,3 @@ def main():
 if __name__ == '__main__':
     main()
     # import_data_from_csv2()
-    t = [[1, 2],[3,4]]
-    m = []
-    m.extend(t)
-    print m

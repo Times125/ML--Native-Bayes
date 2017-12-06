@@ -11,9 +11,11 @@ import Queue
 import codecs
 import time
 import os
-import nltk
+
+from nltk import pos_tag
+from nltk.corpus import wordnet as wn
 from collections import Counter
-from nltk.corpus import stopwords
+from nltk.corpus import stopwords as stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import *
 from numpy import *
@@ -25,11 +27,17 @@ sys.setdefaultencoding('utf8')
 
 __author__ = 'Lich'
 
+stopwords.__class__
+WordNetLemmatizer.__class__
+stopwords.ensure_loaded()
+wn.ensure_loaded()
 '''
 文本处理，包括分词，去停用词、去无用词、词形还原等
 '''
 
 def text_parse(input_text):
+
+    #WordNetLemmatizer.ensure_loader()
     sentence = input_text.lower()
     lemmatizer = WordNetLemmatizer()  # 词形还原
     vocab_set = set([])  # 记录所有出现的单词
@@ -41,7 +49,7 @@ def text_parse(input_text):
     tag_list = ['TO', 'RB', 'RBR', 'RBRS', 'UH', 'WDT', 'WP', 'WP$', 'WRB', 'SYM', 'RP', 'PRP', 'PRP$', 'CD']
     word_list = regexp_tokenize(sentence, pattern)
     filter_word = [w for w in word_list if w not in stopwords.words('english') and w not in special_tag]  # 去停用词和特殊标点符号
-    word_tag = nltk.pos_tag(filter_word)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')]
+    word_tag = pos_tag(filter_word)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')]
     res_word_list = []
     for i in range(0, len(word_tag)):  # 去掉副词、介词、小品词、疑问词、代词、人称代词、所有格代名词等
         if word_tag[i][1] in tag_list:
@@ -170,7 +178,7 @@ def get_class_features():
     q = Queue.Queue()
     # 多线程读文件
     for item in dirs:
-        file_path = win_path + item
+        file_path = mac_path + item
         t = threading.Thread(target=read_file, args=(file_path, item, q))
         t.start()
     t.join()  # 同步
@@ -188,12 +196,12 @@ def get_class_features():
         elif tup[2] == 'pol':
             pass
 
-
+    '''
     # 程序耗时部分2
     for dir_name in dirs:
         for i in range(1, 11):
             f = codecs.open(win_path + dir_name + r'\%d.txt' % i, 'rb', 'utf-8')
-            txt = f.read()  # .decode('utf-8')
+            txt = f.read().decode('utf-8')
             f.close()
             res_word_list, doc_set = text_parse(txt)
             mpost_list.append(res_word_list)
@@ -201,7 +209,7 @@ def get_class_features():
             categories.append(dir_name)
     print '文本去除停用词、词形还原后还剩余', len(list(vocab_set)), '个不重复单词。'
     # 程序耗时部分2
-
+    '''
 
     print '文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), '个不重复单词。'
     docs_features = get_doc_features(mpost_list, vocab_set, 0.015)

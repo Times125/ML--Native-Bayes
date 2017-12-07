@@ -26,18 +26,17 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 __author__ = 'Lich'
-
+'''
 stopwords.__class__
 WordNetLemmatizer.__class__
 stopwords.ensure_loaded()
 wn.ensure_loaded()
 '''
+'''
 文本处理，包括分词，去停用词、去无用词、词形还原等
 '''
 
 def text_parse(input_text):
-
-    #WordNetLemmatizer.ensure_loader()
     sentence = input_text.lower()
     lemmatizer = WordNetLemmatizer()  # 词形还原
     vocab_set = set([])  # 记录所有出现的单词
@@ -151,7 +150,7 @@ def calculate_tf(input_matrix):
 def calculate_idf(doc_nums, n_contain_dict):
     idf_dict = {}
     for word in n_contain_dict.keys():
-        idf_dict[word] = log(doc_nums / (n_contain_dict[word]))
+        idf_dict[word] = log(doc_nums / (n_contain_dict[word]+1))
     return idf_dict
 
 
@@ -166,65 +165,101 @@ def get_class_features():
     mac_path = r'/Users/lch/Desktop/pycharm/Bayes/material/'
     files_list = []
     post_list = []
-    mpost_list = []
-    vocab_set = set([])
     total_vocab_set = set([])
-    dirs = ['env', 'eco', 'pol']
+    dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology']
     features = []
     categories = []
     env = []
     eco = []
     pol = []
+    cul = []
+    ene = []
+    tec = []
+    sec = []
     q = Queue.Queue()
     # 多线程读文件
     for item in dirs:
-        file_path = mac_path + item
+        file_path = win_path + item
         t = threading.Thread(target=read_file, args=(file_path, item, q))
         t.start()
-    t.join()  # 同步
+    t.join()  # 线程同步
     while not q.empty():
         files_list.append(q.get(True))  # 获取读文件的内容
-    # print files_list[0][0][0], '\n\n', files_list[0][0][1], '\n\n', files_list[0][0][2]
 
+    t_time = time.time()
     for tup in files_list:
-        total_vocab_set = total_vocab_set | tup[1]  # 计算所有类别新闻包含的总的不重复的单词数
-        post_list.extend(tup[0])
-        if tup[2] == 'env':
-            pass
-        elif tup[2] == 'eco':
-            pass
-        elif tup[2] == 'pol':
-            pass
+        if tup[1] == dirs[0]:
+            for per_doc in tup[0]:
+                res_word_list, doc_set = text_parse(per_doc[0])
+                post_list.append(res_word_list)
+                total_vocab_set = total_vocab_set | doc_set
+                categories.append(tup[1])
+        elif tup[1] == dirs[1]:
+            for per_doc in tup[0]:
+                res_word_list, doc_set = text_parse(per_doc[0])
+                post_list.append(res_word_list)
+                total_vocab_set = total_vocab_set | doc_set
+                categories.append(tup[1])
+        elif tup[1] == dirs[2]:
+            for per_doc in tup[0]:
+                res_word_list, doc_set = text_parse(per_doc[0])
+                post_list.append(res_word_list)
+                total_vocab_set = total_vocab_set | doc_set
+                categories.append(tup[1])
+        elif tup[1] == dirs[3]:
+            for per_doc in tup[0]:
+                res_word_list, doc_set = text_parse(per_doc[0])
+                post_list.append(res_word_list)
+                total_vocab_set = total_vocab_set | doc_set
+                categories.append(tup[1])
+        elif tup[1] == dirs[4]:
+            for per_doc in tup[0]:
+                res_word_list, doc_set = text_parse(per_doc[0])
+                post_list.append(res_word_list)
+                total_vocab_set = total_vocab_set | doc_set
+                categories.append(tup[1])
+        elif tup[1] == dirs[5]:
+            for per_doc in tup[0]:
+                res_word_list, doc_set = text_parse(per_doc[0])
+                post_list.append(res_word_list)
+                total_vocab_set = total_vocab_set | doc_set
+                categories.append(tup[1])
+        elif tup[1] == dirs[6]:
+            for per_doc in tup[0]:
+                res_word_list, doc_set = text_parse(per_doc[0])
+                post_list.append(res_word_list)
+                total_vocab_set = total_vocab_set | doc_set
+                categories.append(tup[1])
 
-    '''
-    # 程序耗时部分2
-    for dir_name in dirs:
-        for i in range(1, 11):
-            f = codecs.open(win_path + dir_name + r'\%d.txt' % i, 'rb', 'utf-8')
-            txt = f.read().decode('utf-8')
-            f.close()
-            res_word_list, doc_set = text_parse(txt)
-            mpost_list.append(res_word_list)
-            vocab_set = vocab_set | doc_set
-            categories.append(dir_name)
-    print '文本去除停用词、词形还原后还剩余', len(list(vocab_set)), '个不重复单词。'
-    # 程序耗时部分2
-    '''
-
+        t_time_end = time.time()
+    print '线程耗时%.4f 秒' % (t_time_end - t_time)
     print '文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), '个不重复单词。'
-    docs_features = get_doc_features(mpost_list, vocab_set, 0.015)
+    docs_features = get_doc_features(post_list, total_vocab_set, 0.008)
+
     for i in range(0, len(categories)):
-        if categories[i] == 'env':
-            env.extend(docs_features[i])
-        elif categories[i] == 'eco':
+        if categories[i] == 'culture':
+            cul.extend(docs_features[i])
+        elif categories[i] == 'economy':
             eco.extend(docs_features[i])
-        elif categories[i] == 'pol':
+        elif categories[i] == 'energy':
+            ene.extend(docs_features[i])
+        elif categories[i] == 'environment':
+            env.extend(docs_features[i])
+        elif categories[i] == 'political':
             pol.extend(docs_features[i])
+        elif categories[i] == 'security':
+            sec.extend(docs_features[i])
+        elif categories[i] == 'technology':
+            tec.extend(docs_features[i])
         else:
             pass
-    features.append((env, 'env'))
-    features.append((eco, 'eco'))
-    features.append((pol, 'pol'))
+    features.append((env, 'environment'))
+    features.append((eco, 'economy'))
+    features.append((pol, 'political'))
+    features.append((cul, 'culture'))
+    features.append((sec, 'security'))
+    features.append((tec, 'technology'))
+    features.append((ene, 'energy'))
 
     end_time = time.time()
     print 'method get_class_features() cost total time %0.4f seconds' % (end_time - start_time)
@@ -238,13 +273,10 @@ def get_class_features():
 
 def read_file(path_name, category, queue):
     path_dir = os.listdir(path_name)
-    vocab_set = set([])
     content_list = []
     for fn in path_dir:
         f = codecs.open(os.path.join(path_name, fn), 'rb', 'utf-8')
         txt = f.read().decode('utf-8')
         f.close()
-        res_word_list, doc_set = text_parse(txt)
-        vocab_set = vocab_set | doc_set
-        content_list.append(res_word_list)
-    queue.put((content_list, vocab_set, category))  # 包含了： （每篇新闻处理后的结果[[],[]]，这一类新闻所含的单词集set()，这一类新闻的类别str）
+        content_list.append(list([txt]))
+    queue.put((content_list, category))  # 包含了： （每篇新闻处理后的结果[[],[]]，这一类新闻的类别str）

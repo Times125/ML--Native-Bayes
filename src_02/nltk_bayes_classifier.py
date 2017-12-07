@@ -13,7 +13,7 @@ __author__ = 'Lich'
 '''
 朴素贝叶斯分类器
 '''
-categories = ['env', 'eco', 'pol']
+categories = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology']
 train_set = []
 test_set = []
 
@@ -24,54 +24,51 @@ def native_bayes_classifier(features, post_list, vocab_set=None):
 
     train_set = post_list[::2]
     test_set = post_list[1::2]
+
     train_data = [(doc_features(doc, category), category) for (doc, category) in train_set]
     test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
 
     # print train_set, '\n\n'
     # print test_set, '\n\n'
     # print train_data, '\n\n'
-    # print test_data
+    print test_data[5]
     # print len(train_set), len(test_set)
-    env_tmp = {u'contains(abundance)': False, u'contains(climate)': True, u'contains(michelle)': False,
-               u'contains(trump-owned)': False, u'contains(weight)': False, u'contains(mass)': False,
-               u'contains(atmospheric)': False, u'contains(strongest)': False, u'contains(rock)': False,
-               u'contains(enabled)': False, u'contains(concept)': False, u'contains(platoon)': False,
-               u'contains(risk)': False, u'contains(chile)': False, u'contains(population)': False,
-               u'contains(moment)': False, u'contains(consultation)': False, u'contains(marcelo)': False,
-               u'contains(declared)': False, u'contains(occurs)': False, u'contains(exalted)': False,
-               u'contains(tropical)': True, u'contains(creation)': False, u'contains(flooding)': False,
-               u'contains(strength)': True, u'contains(storm)': True}
-    pol_tmp = {u'contains(suing)': False, u'contains(insurance)': False, u"contains(city's)": False,
-               u'contains(subsidy)': False, u'contains(janelle)': False, u'contains(cradle)': False,
-               u'contains(washington)': False, u'contains(white)': True, u'contains(politics)': False,
-               u'contains(mr)': True, u"contains(baltimore's)": False, u'contains(wall)': False,
-               u'contains(trade)': False, u'contains(fact-check)': False, u'contains(capitol)': False,
-               u'contains(warned)': False, u'contains(tower)': False, u'contains(cancellation)': False,
-               u'contains(kuttner)': False, u'contains(marched)': False, u'contains(fringe)': False,
-               u'contains(hate)': False, u'contains(growing)': False, u'contains(trump)': True}
-    pol_tmp2 = {u'contains(percent)': False, u'contains(cost-sharing)': False, u'contains(center)': False,
-                u'contains(mayor)': False, u'contains(paula)': False, u'contains(ellen)': False,
-                u'contains(rally)': True, u'contains(lindsey)': False, u'contains(alt-left)': False,
-                u'contains(prospect)': False, u'contains(encourage)': False, u'contains(covering)': False,
-                u'contains(renaming)': False, u'contains(lee)': False, u'contains(county)': False,
-                u'contains(payment)': False, u'contains(attorney)': False, u'contains(treason)': False,
-                u'contains(attack)': False, u'contains(help)': False, u'contains(obamacare)': False,
-                u'contains(alabama)': False, u'contains(neo-nazis)': False, u'contains(blackened)': False,
-                u'contains(e)': False, u"contains(he's)": False, u'contains(military)': False,
-                u'contains(william)': False, u'contains(equivalency)': False, u'contains(guilt)': False,
-                u'contains(strategist)': False, u'contains(flag)': False, u'contains(gotta)': False,
-                u'contains(seeing)': False, u'contains(press)': False, u'contains(child)': False,
-                u"contains(it's)": False, u'contains(diehl)': False, u'contains(courthouse)': False,
-                u'contains(legislation)': False, u'contains(identity)': False, u'contains(re-ignited)': False,
-                u'contains(statue)': False, u'contains(jefferson)': False}
 
-    classifier = nltk.classify.NaiveBayesClassifier.train(test_data)
-    for i in range(0,len(test_data)):
+    cul = {u'contains(monoxide)': False, u'contains(alec)': False, u'contains(ambitious)': False,
+           u'contains(writes)': True, u'contains(fate)': False, u'contains(voorhees)': False,
+           u'contains(blazing)': False, u'contains(warmth)': False, u'contains(d-day)': False,
+           u'contains(handful)': False, u'contains(boo)': False, u'contains(obstacle)': False,
+           u'contains(teenager)': False, u'contains(minority)': False, u'contains(protect)': True,
+           u'contains(key)': False, u'contains(led)': True, u'contains(explained)': False, u'contains(nasty)': False,
+           u'contains(sporting)': False, u'contains(dwells)': False, u'contains(jones)': False,
+           u'contains(pack)': False, u'contains(claim)': False, u'contains(tuition)': False, u'contains(clean)': False,
+           u'contains(underline)': False, u'contains(bringing)': True, u'contains(wise)': False,
+           u'contains(vietnam)': False, u'contains(broadening)': False, u'contains(resentment)': False,
+           u'contains(fed)': False, u'contains(confidant)': False, u'contains(andy)': False,
+           u'contains(doisneau)': False, u'contains(wild)': True, u'contains(eco-warrior)': False,
+           u'contains(democrat)': False, u'contains(wilson)': False, u'contains(surface)': False,
+           u'contains(pity)': False, u'contains(ranked)': False, u'contains(mount)': False, u'contains(slang)': False,
+           u'contains(taking)': True, u'contains(giles)': False, u'contains(columnist)': False,
+           u'contains(russell)': False, u'contains(warrant)': False, u'contains(mellowed)': False,
+           u'contains(mounting)': False, u'contains(certain)': False, u'contains(arriving)': False,
+           u'contains(shelf)': False, u'contains(stage-play)': False, u'contains(grave)': False,
+           u'contains(die)': False, u'contains(magnificent)': False, u'contains(possessive)': False,
+           u'contains(savaging)': False, u'contains(share)': False, u'contains(settlement)': False,
+           u'contains(fossil)': False, u'contains(meet)': False, u'contains(dent)': False,
+           u'contains(gallantry)': False, u'contains(statement)': False, u'contains(bass)': False,
+           u'contains(wardrobe)': False, u'contains(bloomsbury)': True, u'contains(marriage)': True,
+           u'contains(ewht)': False, u'contains(sisterhood)': False, u'contains(flower)': False,
+           u'contains(time-straddling)': False, u'contains(dog)': False, u'contains(subscriber)': False,
+           u'contains(leave)': False, u'contains(stripe)': False, u'contains(medium)': False, u'contains(good)': False,
+           u'contains(live)': False, u'contains(unlikely)': False, u'contains(b-movie)': False,
+           u'contains(billboard)': False, u'contains(hawk)': False, u'contains(lump)': False,
+           u'contains(heartbreak)': False, u'contains(battler)': False, u'contains(bauman)': False,
+           u'contains(smile)': False, u'contains(mandolin)': False, u'contains(spanish-speaking)': False}
+    classifier = nltk.classify.NaiveBayesClassifier.train(train_data)
+    for i in range(0, len(test_data)):
         print '分类结果', classifier.classify(test_data[i][0])
-    print 'env_tmp is ', classifier.classify(env_tmp)
-    print 'pol_tmp is', classifier.classify(pol_tmp)
-    print 'pol_tmp2 is', classifier.classify(pol_tmp2)
-    print 'test_accuracy is %d' % nltk.classify.accuracy(classifier, train_data)
+    print classifier.classify(cul)
+    print 'test_accuracy is %.4f' % nltk.classify.accuracy(classifier, test_data)
 
 
 '''
@@ -82,13 +79,25 @@ def native_bayes_classifier(features, post_list, vocab_set=None):
 def doc_features(doc, category):
     doc_words = set(doc)
     features = {}
-    if category == 'env':
+    if category == categories[0]:
         for word in word_features[0][0]:
             features['contains(%s)' % word] = (word in doc_words)
-    elif category == 'eco':
+    elif category == categories[1]:
         for word in word_features[1][0]:
             features['contains(%s)' % word] = (word in doc_words)
-    elif category == 'pol':
+    elif category == categories[2]:
+        for word in word_features[2][0]:
+            features['contains(%s)' % word] = (word in doc_words)
+    elif category == categories[3]:
+        for word in word_features[1][0]:
+            features['contains(%s)' % word] = (word in doc_words)
+    elif category == categories[4]:
+        for word in word_features[2][0]:
+            features['contains(%s)' % word] = (word in doc_words)
+    elif category == categories[5]:
+        for word in word_features[1][0]:
+            features['contains(%s)' % word] = (word in doc_words)
+    elif category == categories[6]:
         for word in word_features[2][0]:
             features['contains(%s)' % word] = (word in doc_words)
     return features

@@ -6,12 +6,14 @@
 @Time:  2017/11/29 10:35
 @Description: 训练样本总数为30，其中环境类、政治类、经济类文本各10份
 """
+from src_02.export_data import build_features_lib
+
 __author__ = 'Lich'
 
-from import_data import import_features_from_lib
+from import_data import import_features_from_lib, import_data_from_csv
 from nltk_bayes_classifier import *
 from text_processing import *
-
+from multiprocessing import Pool
 
 def main():
     start_time = time.time()
@@ -23,15 +25,18 @@ def main():
 
     # 程序耗时部分1
     for dir_name in dirs:
-        for i in range(0, 40):
+        for i in range(0, 49):
+            text_parse_time = time.time()
             res_word_list, doc_set = text_parse(
                 open(r'G:\Repositories\ML--Native-Bayes\material\\' + dir_name + r'\%d.txt' % i).read().decode(
                     'utf-8'))  # 读取测试文本
+            text_parse_time_end = time.time()
+            print 'main()---text_parse_time : %.4f' % (text_parse_time_end - text_parse_time)
             post_list.append((res_word_list, dir_name))  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
             vocab_set = vocab_set | doc_set
     mid_time = time.time()
     print 'read test files cost total time %.4f seconds' % (mid_time - mid_time2)
-    native_bayes_classifier(features, post_list, vocab_set)
+    classifier = native_bayes_classifier(features, post_list, vocab_set)
 
     end_time = time.time()
     print 'method main() cost total time %.4f seconds' % (end_time - start_time)
@@ -61,7 +66,6 @@ def tests():
 
 
 if __name__ == '__main__':
-    main()
-    # tests()
-    # build_features_lib() # 建立特征语料库
     # import_data_from_csv()
+    # build_features_lib()
+   main()  # 运行程序

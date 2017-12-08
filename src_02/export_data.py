@@ -43,6 +43,8 @@ def write_to_file(item):
     if not os.path.exists(win_f_path):
         os.makedirs(win_f_path)
     else:
-        f = codecs.open(win_f_path + u'\\' + item[1] + r'.txt', 'w', 'utf-8')
+        f = codecs.open(os.path.join(win_f_path, item[1]) + r'.txt', 'w', 'utf-8')
+        if len(item[0]) == 0:
+            print u'export_data.py:build_features_lib() :读取某一类文件夹的所有文件,文本长度为', len(item[0]), u'问题出现在文件:', os.path.join(win_f_path, item[1])
         f.write(' '.join(item[0]))
         f.close()

@@ -31,7 +31,7 @@ def native_bayes_classifier(features, post_list, vocab_set=None):
     # print train_set, '\n\n'
     # print test_set, '\n\n'
     # print train_data, '\n\n'
-    print test_data[5]
+    # print test_data[5]
     # print len(train_set), len(test_set)
 
     cul = {u'contains(monoxide)': False, u'contains(alec)': False, u'contains(ambitious)': False,
@@ -69,7 +69,7 @@ def native_bayes_classifier(features, post_list, vocab_set=None):
         print '分类结果', classifier.classify(test_data[i][0])
     print classifier.classify(cul)
     print 'test_accuracy is %.4f' % nltk.classify.accuracy(classifier, test_data)
-
+    return classifier
 
 '''
 构建一个字典，主要表示输入文档的单词，是否出现在自己构建的语料库中

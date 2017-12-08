@@ -8,10 +8,11 @@
 """
 import codecs
 import csv
-import sys
+import re
 import time
 from export_data import build_features_lib
 import os
+import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 __author__ = 'Lich'
@@ -20,6 +21,7 @@ win_f_path = r'G:\Repositories\ML--Native-Bayes\features'
 mac_f_path = r'/Users/lch/Desktop/pycharm/Bayes/features'
 win_path = r'G:\Repositories\ML--Native-Bayes\material'
 mac_path = r'/Users/lch/Desktop/pycharm/Bayes/material/'
+test_path = r'C:\Users\Lich\Desktop\test'
 dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology']
 def import_data_from_csv():
     print '正在导入，请等待...'
@@ -27,7 +29,7 @@ def import_data_from_csv():
     log_info = {}
     for dir_name in dirs:
         csv_reader = csv.reader(
-            open(r'C:\Users\Lich\Desktop\material' + u'\\' + dir_name + u'\\' + dir_name + r'.csv', 'r'))
+            open(test_path + u'\\' + dir_name + u'\\' + dir_name + r'.csv', 'rb'))
         a = 0
         for row in csv_reader:
             if len(row) == 0:
@@ -35,11 +37,13 @@ def import_data_from_csv():
             else:
                 f = codecs.open(win_path + u'\\' + dir_name + u'\\' + str(a) + r'.txt', 'w', 'utf-8', errors='ignore')
                 try:
-                    txt = str(row[0]).decode('gbk').encode('utf-8')
+                    txt = str(row[0]).decode('ISO-8859-15').encode('utf-8')
+                    # txt = re.sub(r'[\x00-\x7F]+', ' ', txt)
+                    f.write(txt)
                 except UnicodeDecodeError, e:
-                    pass
-                f.write(txt)
-                f.close()
+                    print e, 'UnicodeDecodeError'
+                finally:
+                    f.close()
                 a += 1
         log_info[dir_name] = a
     end_time = time.time()
@@ -54,10 +58,11 @@ def import_features_from_lib():
     features = []
     if not os.path.exists(win_f_path):
         build_features_lib()
+        return 0
     else:
         for dir_name in dirs:
             f = codecs.open(os.path.join(win_f_path, dir_name + '.txt'), 'rb', 'utf-8')
-            txt = f.read().decode('utf-8')
+            txt = f.read().decode('ISO-8859-15').encode('utf-8')
             lst = txt.split(' ')
             features.append((lst, dir_name))
             f.close()

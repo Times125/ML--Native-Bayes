@@ -13,13 +13,16 @@ import os
 import threading
 import time
 from collections import Counter
-
+from file_path_constant import *
 from nltk import pos_tag
 from nltk.corpus import stopwords as stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import *
 from numpy import *
 import sys
+
+from numpy.ma import log
+
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -45,29 +48,19 @@ def text_parse(input_text):
                   | \w+(?:[-']\w+)*
                   | (?:[,.;'"?():-_`])"""
     tag_list = set(['TO', 'RB', 'RBR', 'RBRS', 'UH', 'WDT', 'WP', 'WP$', 'WRB', 'SYM', 'RP', 'PRP', 'PRP$', 'CD'])
-    word_list = []
-    wl_s_time = time.time()
     word_list = regexp_tokenize(sentence, pattern)
-    wl_e_time = time.time()
-    print 'wl_s_time = %.4f'%(wl_e_time - wl_s_time)
 
-    fw_s_time = time.time()
     filter_word = [w for w in word_list if w not in stopwords.words('english') and w not in special_tag]  # 去停用词和特殊标点符号
     word_tag = pos_tag(filter_word)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')]
-    fw_e_time = time.time()
-    print 'fw_s_time = %.4f'%(fw_e_time - fw_s_time)
 
     res_word_list = []
     for i in range(0, len(word_tag)):  # 去掉副词、介词、小品词、疑问词、代词、人称代词、所有格代名词等
         if word_tag[i][1] in tag_list:
             pass
         else:
-            wll_s_time = time.time()
             word = lemmatizer.lemmatize(word_tag[i][0])
             res_word_list.append(word)
             vocab_set.add(word)
-            wll_e_time = time.time()
-            print 'wwl_s_time = %.4f' % (wll_e_time - wll_s_time)
     return res_word_list, vocab_set
 
 
@@ -170,13 +163,10 @@ def calculate_idf(doc_nums, n_contain_dict):
 
 def get_class_features():
     start_time = time.time()
-    win_path = r'G:\Repositories\ML--Native-Bayes\material'
-    mac_path = r'/Users/lch/Desktop/pycharm/Bayes/material/'
     files_list = []
     post_list = []
     threads = []
     total_vocab_set = set([])
-    dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology']
     features = []
     categories = []
     env = []
@@ -203,15 +193,9 @@ def get_class_features():
     t_time = time.time()
     for tup in files_list:
         print tup[1], len(files_list)
-        if len([0]) == 0:
-            print '要打印tup' , tup[1] , '\n\n'
         if tup[1] == dirs[0]:
             for per_doc in tup[0]:
-                if len(per_doc) == 0:
-                    print u'文件读取有问题' + dirs[0] + len(per_doc)
                 res_word_list, doc_set = text_parse(per_doc[0])
-                if len(res_word_list) == 0:
-                    print u'在text_parse()函数出现了问题' + dirs[0]
                 post_list.append(res_word_list)
                 total_vocab_set = total_vocab_set | doc_set
                 categories.append(tup[1])
@@ -219,51 +203,38 @@ def get_class_features():
             for per_doc in tup[0]:
                 res_word_list, doc_set = text_parse(per_doc[0])
                 post_list.append(res_word_list)
-                if len(res_word_list) == 0:
-                    print u'在text_parse()函数出现了问题' + dirs[1]
                 total_vocab_set = total_vocab_set | doc_set
                 categories.append(tup[1])
         elif tup[1] == dirs[2]:
             for per_doc in tup[0]:
                 res_word_list, doc_set = text_parse(per_doc[0])
                 post_list.append(res_word_list)
-                if len(res_word_list) == 0:
-                    print u'在text_parse()函数出现了问题' + dirs[2]
                 total_vocab_set = total_vocab_set | doc_set
                 categories.append(tup[1])
         elif tup[1] == dirs[3]:
             for per_doc in tup[0]:
                 res_word_list, doc_set = text_parse(per_doc[0])
                 post_list.append(res_word_list)
-                if len(res_word_list) == 0:
-                    print u'在text_parse()函数出现了问题' + dirs[3]
                 total_vocab_set = total_vocab_set | doc_set
                 categories.append(tup[1])
         elif tup[1] == dirs[4]:
             for per_doc in tup[0]:
                 res_word_list, doc_set = text_parse(per_doc[0])
                 post_list.append(res_word_list)
-                if len(res_word_list) == 0:
-                    print u'在text_parse()函数出现了问题' + dirs[4]
                 total_vocab_set = total_vocab_set | doc_set
                 categories.append(tup[1])
         elif tup[1] == dirs[5]:
             for per_doc in tup[0]:
                 res_word_list, doc_set = text_parse(per_doc[0])
                 post_list.append(res_word_list)
-                if len(res_word_list) == 0:
-                    print u'在text_parse()函数出现了问题' + dirs[5]
                 total_vocab_set = total_vocab_set | doc_set
                 categories.append(tup[1])
         elif tup[1] == dirs[6]:
             for per_doc in tup[0]:
                 res_word_list, doc_set = text_parse(per_doc[0])
                 post_list.append(res_word_list)
-                if len(res_word_list) == 0:
-                    print u'在text_parse()函数出现了问题' + dirs[6]
                 total_vocab_set = total_vocab_set | doc_set
                 categories.append(tup[1])
-
         t_time_end = time.time()
     print '线程耗时%.4f 秒' % (t_time_end - t_time)
     print '文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), '个不重复单词。'
@@ -298,7 +269,6 @@ def get_class_features():
     print 'method get_class_features() cost total time %0.4f seconds' % (end_time - start_time)
     return features
 
-
 '''
 读取某一类文件夹的所有文件
 '''
@@ -313,7 +283,5 @@ def read_file(path_name, category, queue):
         f = codecs.open(os.path.join(path_name, fn), 'r', 'utf-8')
         txt = f.read().decode('utf-8')
         f.close()
-        if len(txt) == 0:
-            print u'读取某一类文件夹的所有文件,文本长度为', len(txt), u'问题出现在文件:', os.path.join(path_name, fn)
         content_list.append(list([txt]))
     queue.put((content_list, category))  # 包含了： （每篇新闻处理后的结果[[],[]]，这一类新闻的类别str）

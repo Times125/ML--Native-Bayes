@@ -7,9 +7,17 @@
 @Description: 训练样本包括：环境类、政治类、经济类、文化类、技术类、安全类和能源类文本
 """
 import getopt
+import time
+import sys
+import os
+import codecs
+from file_path_constant import *
+from nltk_bayes_classifier import import_features_from_lib, get_model
+from nltk_bayes_classifier import import_data_from_excel, train_native_bayes_classifier
+from export_data import build_features_lib
+from text_processing import text_parse
+from multiprocessing import Pool, Manager,Queue
 
-from nltk_bayes_classifier import *
-from text_processing import *
 
 __author__ = 'Lich'
 
@@ -46,7 +54,7 @@ def classify_text(txt):
     return res
 
 def usage():
-    print (u'命令参数 -e: 从Excel 里导入数据 -l: 建立特征库 -t: 训练模型 -c: 输入一篇文章进行分类\n')
+    print (u'所有命令参数 -e: 从Excel 里导入数据 -l: 建立特征库 -t: 训练模型 -c: 输入一篇文章进行分类\n')
     print(u'如何使用？请看示例:\n')
     print(u'1) 查看帮助：[python main.py -h] 或者 [python main.py --help]\n')
     print(u'2) 从Excel 里导入数据:[python main.py -e]\n')
@@ -56,26 +64,65 @@ def usage():
 
 def train():
     start_time = time.time()
-    features = import_features_from_lib()  # 这是自己建立的语料库
+    features, all_words = import_features_from_lib()  # 这是自己建立的语料库
     mid_time2 = time.time()
     vocab_set = set([])
     post_list = []
 
-    # 程序耗时部分1，需要修改,不能使用构建特征库的数据
+    man = Manager()
+    queue_pool = man.Queue()
+    pool_t = Pool(7)  # 开7个进程
+    print 'Parent process ID %d' % os.getpid()
     for dir_name in dirs:
-        for i in range(0, 49):
-            res_word_list, doc_set = text_parse(
-                open(r'G:\Repositories\ML--Native-Bayes\material\\' + dir_name + r'\%d.txt' % i).read().decode(
-                    'utf-8'))  # 读取测试文本
+        pool_t.apply_async(deal_train_doc, (dir_name, queue_pool,))
+    pool_t.close()
+    pool_t.join()
+
+    print queue_pool.empty()
+    while not queue_pool.empty():
+        res = queue_pool.get(True)
+        for lst in res[0]:
+            print lst
+            post_list.append((lst, res[1]))
+        vocab_set = vocab_set | res[2]
+    
+    '''
+    # 程序耗时部分1，需要修改
+    for dir_name in dirs:
+        files_num = len(os.listdir(os.path.join(mac_path, dir_name)))  # 一个类目录下文件数量
+        print files_num
+        fp = os.path.join(mac_path, dir_name)
+        for i in range(files_num/2, files_num):
+            f = codecs.open(os.path.join(fp, r'%d.txt' % i), 'r', 'utf-8')
+            txt = f.read()
+            res_word_list, doc_set = text_parse(txt)  # 读取测试文本
             post_list.append((res_word_list, dir_name))  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
             vocab_set = vocab_set | doc_set
+            f.close()
+    '''
     mid_time = time.time()
-    print 'read test files cost total time %.4f seconds' % (mid_time - mid_time2)
+    print 'read test files cost total time %.4f seconds' % (mid_time - mid_time2)  # 847秒
     train_native_bayes_classifier(features, post_list, vocab_set)
 
     end_time = time.time()
-    print 'method main() cost total time %.4f seconds' % (end_time - start_time)
+    print 'method train() cost total time %.4f seconds' % (end_time - start_time)  #
 
+def deal_train_doc(dir_name, queue_pool):
+    import os
+    p_post_list = []
+    p_vocab_set = set([])
+    fp = os.path.join(mac_path, dir_name)
+    files_num = len(os.listdir(fp))  # 一个类目录下文件数量
+    print u'此目录下共%d个txt文件' % files_num, 'deal_train_doc subprocess id %d' % os.getpid()
+    for i in range(files_num / 2, files_num):
+        f = codecs.open(os.path.join(fp, r'%d.txt' % i), 'rb', 'utf-8')
+        txt = f.read()
+        p_res_word_list, p_doc_set = text_parse(txt)  # 读取测试文本
+        p_post_list.append((p_res_word_list, dir_name))  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
+        p_vocab_set = p_vocab_set | p_doc_set
+        f.close()
+    print len(p_post_list), dir_name
+    queue_pool.put((p_post_list, dir_name, p_vocab_set))
 
 def tests():
     train = [({'a': 1, 'b': 0, 'c': 1}, 'y'),
@@ -129,6 +176,8 @@ def tests():
 
 
 if __name__ == '__main__':
-    # classify_text()
     # main()  # 运行程序
-    build_features_lib()
+    import_data_from_excel()
+    # build_features_lib()
+    # train()
+    # classify_text()

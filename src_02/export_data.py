@@ -23,8 +23,8 @@ categories = ['culture', 'economy', 'energy', 'environment', 'political', 'secur
 def build_features_lib():
     print u'正在导出特征，请等待...'
     start_time = time.time()
-    features = get_class_features()  # 这是自己建立的语料库
-    for item in features:
+    l_features = get_class_features()  # 这是自己建立的语料库 [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
+    for item in l_features:
         if item[1] == categories[0]:
             write_to_file(item)
         elif item[1] == categories[1]:
@@ -44,12 +44,14 @@ def build_features_lib():
     return 0
 
 def write_to_file(item):
-    if not os.path.exists(win_f_path):
-        os.makedirs(win_f_path)
+    if not os.path.exists(mac_f_path):
+        print 'nonononononononononon!!!'
+        os.makedirs(mac_f_path)
     else:
         try:
-            f = codecs.open(os.path.join(win_f_path, item[1]) + r'.txt', 'w', 'utf-8')
-            f.write(' '.join(item[0]))
+            f = codecs.open(os.path.join(mac_f_path, item[1]) + r'.txt', 'wb', 'utf-8')
+            txt = ' '.join(item[0])  # list 转 str
+            f.write(txt)
         except IOError, e:
             print item[1], u'特征库导出异常，IOError ', e.message
         finally:

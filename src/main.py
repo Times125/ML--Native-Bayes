@@ -7,6 +7,8 @@
 @Description:
 
 """
+from multiprocessing import Pool
+
 __author__ = 'Lich'
 
 from src.bayes import *
@@ -27,10 +29,18 @@ def main():
     res = classify_native_bayes(doc_vec, p0, p1, p_bad)
     print res
 
+def func(msg):
+    print 'msg', msg
 
 if __name__ == '__main__':
     # main()
+
     list = [1,2,3,4,5,6,7,8,9]
     print list[::2]
     print list[1::2]
+    pool = Pool(4)
+    for x in range(4):
+        pool.apply_async(func, args=(x,))
+    pool.close()
+    pool.join()
 

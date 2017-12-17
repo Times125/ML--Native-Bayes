@@ -7,22 +7,24 @@
 @Description: 文本处理，构建自己的新闻语料库
 """
 
-import Queue
+import Queue as queue_t
 import codecs
 import os
-import threading
+
 import time
 from collections import Counter
+
+
+from threading import Thread
 from file_path_constant import *
 from nltk import pos_tag
 from nltk.corpus import stopwords as stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import *
 from numpy import *
-import sys
-
 from numpy.ma import log
-
+from multiprocessing import Pool, Manager
+import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -42,7 +44,7 @@ def text_parse(input_text):
     sentence = input_text.lower()
     lemmatizer = WordNetLemmatizer()  # 词形还原
     vocab_set = set([])  # 记录所有出现的单词
-    special_tag = set(['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’', '“', '”', '！', '：', '^', '/'])
+    special_tag = set(['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’', '“', '”', '！', '：', '^', '/','[', ']'])
     pattern = r""" (?x)(?:[a-z]\.)+ 
                   | \d+(?:\.\d+)?%?\w+
                   | \w+(?:[-']\w+)*
@@ -80,17 +82,18 @@ def get_doc_features(input_matrix_data, vocab_set, threshold=0.008):
     words_idf = calculate_idf(doc_nums, n_contain_dict)  # 计算逆文档
     words_tf_idf, sorted_tf_idf = calculate_tf_idf(doc_nums, words_tf, words_idf)  # 计算一篇文档中单词的tf-idf值
 
-    # 取特征：设置阈值,取tf-idf值大于0.008,这个阈值需要根据分类结果进行调整
+    print 'method get_doc_features() calculate TF-IDF cost total time %0.4f seconds' % (time.time() - start_time)  # 77秒
+    # 取特征：设置阈值,取tf-idf值大于0.01,这个阈值需要根据分类结果进行调整
     doc_features = []
     for i in range(0, len(sorted_tf_idf)):
-        tmp = []
+        tmp = []  # 不能保证特征里面没有重复的值
         for tuple_w in sorted_tf_idf[i]:
             if tuple_w[1] >= threshold:
                 tmp.append(tuple_w[0])
         doc_features.append(tmp)
         del tmp
     end_time = time.time()
-    print 'method get_doc_features() cost total time %0.4f seconds' % (end_time - start_time)
+    print 'method get_doc_features() cost total time %0.4f seconds' % (end_time - start_time)  # 77秒
     return doc_features
 
 
@@ -168,7 +171,7 @@ def get_class_features():
     threads = []
     total_vocab_set = set([])
     features = []
-    categories = []
+    m_categories = []
     env = []
     eco = []
     pol = []
@@ -176,87 +179,83 @@ def get_class_features():
     ene = []
     tec = []
     sec = []
-    q = Queue.Queue()
+    qt = queue_t.Queue()  # 线程用的队列
+    pool = Pool(7)  # 开启7个进程
+    manager = Manager()
+    qp = manager.Queue()  # 进程用的队列
     # 多线程读文件
     for item in dirs:
-        file_path = os.path.join(win_path, item)
-        t = threading.Thread(target=read_file, args=(file_path, item, q))
+        file_path = os.path.join(mac_path, item)
+        t = Thread(target=read_file, args=(file_path, item, qt))
         threads.append(t)
         t.start()
         t.setName(item+' thread')
     for t in threads:
         t.join()  # 线程同步
-    print u'队列长度', q.qsize()
-    while not q.empty():
-        files_list.append(q.get(True))  # 获取读文件的内容
+    print u'队列长度', qt.qsize()
+    while not qt.empty():
+        files_list.append(qt.get(True))  # 获取读文件的内容
 
+    # 这里可以开多个线程来处理
     t_time = time.time()
-    for tup in files_list:
-        print tup[1], len(files_list)
+    print 'Parent process ID %d' % os.getpid()
+    for tup in files_list:  # [（[[doc1],[doc2]]，cat1）,([[doc1],[doc2]]，cat2）,...,([[doc1],[doc2]]，cat7）]
+        # print tup[1], len(files_list)
+        pool.apply_async(deal_doc, (tup[0], tup[1], qp))
+        '''
         if tup[1] == dirs[0]:
+            print len(tup[0]),'---', tup[1]
+            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
+            
             for per_doc in tup[0]:
                 res_word_list, doc_set = text_parse(per_doc[0])
                 post_list.append(res_word_list)
                 total_vocab_set = total_vocab_set | doc_set
-                categories.append(tup[1])
+                m_categories.append(tup[1])
+            
         elif tup[1] == dirs[1]:
-            for per_doc in tup[0]:
-                res_word_list, doc_set = text_parse(per_doc[0])
-                post_list.append(res_word_list)
-                total_vocab_set = total_vocab_set | doc_set
-                categories.append(tup[1])
+            print len(tup[0]), '---', tup[1]
+            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
         elif tup[1] == dirs[2]:
-            for per_doc in tup[0]:
-                res_word_list, doc_set = text_parse(per_doc[0])
-                post_list.append(res_word_list)
-                total_vocab_set = total_vocab_set | doc_set
-                categories.append(tup[1])
+            print len(tup[0]), '---', tup[1]
+            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
         elif tup[1] == dirs[3]:
-            for per_doc in tup[0]:
-                res_word_list, doc_set = text_parse(per_doc[0])
-                post_list.append(res_word_list)
-                total_vocab_set = total_vocab_set | doc_set
-                categories.append(tup[1])
+            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
         elif tup[1] == dirs[4]:
-            for per_doc in tup[0]:
-                res_word_list, doc_set = text_parse(per_doc[0])
-                post_list.append(res_word_list)
-                total_vocab_set = total_vocab_set | doc_set
-                categories.append(tup[1])
+            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
         elif tup[1] == dirs[5]:
-            for per_doc in tup[0]:
-                res_word_list, doc_set = text_parse(per_doc[0])
-                post_list.append(res_word_list)
-                total_vocab_set = total_vocab_set | doc_set
-                categories.append(tup[1])
+            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
         elif tup[1] == dirs[6]:
-            for per_doc in tup[0]:
-                res_word_list, doc_set = text_parse(per_doc[0])
-                post_list.append(res_word_list)
-                total_vocab_set = total_vocab_set | doc_set
-                categories.append(tup[1])
-        t_time_end = time.time()
-    print '线程耗时%.4f 秒' % (t_time_end - t_time)
-    print '文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), '个不重复单词。'
-    docs_features = get_doc_features(post_list, total_vocab_set, 0.008)
+            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
+        '''
+    pool.close()  # 关闭子进程
+    pool.join()  # 等待进程同步
+    print 'size------', qp.empty()
+    while not qp.empty():
+        res = qp.get(True)
+        post_list.extend(res[0])
+        total_vocab_set = total_vocab_set | res[1]
+        m_categories.extend(res[2])
 
-    for i in range(0, len(categories)):
-        if categories[i] == 'culture':
+    t_time_end = time.time()
+    print u'进程耗时%.4f 秒' % (t_time_end - t_time) # 453秒
+    print u'文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), u'个不重复单词。'
+    docs_features = get_doc_features(post_list, total_vocab_set, 0.01)  # [[],[],..,[]]
+    for i in range(0, len(m_categories)):
+        if m_categories[i] == 'culture':
             cul.extend(docs_features[i])
-        elif categories[i] == 'economy':
+        elif m_categories[i] == 'economy':
             eco.extend(docs_features[i])
-        elif categories[i] == 'energy':
+        elif m_categories[i] == 'energy':
             ene.extend(docs_features[i])
-        elif categories[i] == 'environment':
+        elif m_categories[i] == 'environment':
             env.extend(docs_features[i])
-        elif categories[i] == 'political':
+        elif m_categories[i] == 'political':
             pol.extend(docs_features[i])
-        elif categories[i] == 'security':
+        elif m_categories[i] == 'security':
             sec.extend(docs_features[i])
-        elif categories[i] == 'technology':
+        elif m_categories[i] == 'technology':
             tec.extend(docs_features[i])
-        else:
-            pass
     features.append((env, 'environment'))
     features.append((eco, 'economy'))
     features.append((pol, 'political'))
@@ -266,22 +265,44 @@ def get_class_features():
     features.append((ene, 'energy'))
 
     end_time = time.time()
-    print 'method get_class_features() cost total time %0.4f seconds' % (end_time - start_time)
+    print 'method get_class_features() cost total time %0.4f seconds' % (end_time - start_time)  # 530秒
     return features
 
-'''
-读取某一类文件夹的所有文件
-'''
 
-import os
+'''
+处理一个文档，多线程用的
+'''
+def deal_doc(n_list, category, qp):
+    import os
+    print 'deal_doc subprocess id %d' % os.getpid()
+    p_list = []
+    p_categories = []
+    p_vocab_set = set([])
+    for per_doc in n_list:
+        res_word_list, doc_set = text_parse(per_doc[0])
+        p_list.append(res_word_list)
+        p_vocab_set = p_vocab_set | doc_set
+        p_categories.append(category)
+
+    qp.put((p_list, p_vocab_set, p_categories))
+
+
+'''
+读取某一类文件夹的一半文件
+'''
 
 
 def read_file(path_name, category, queue):
     path_dir = os.listdir(path_name)
+    files_num = len(path_dir)
     content_list = []
-    for fn in path_dir:
-        f = codecs.open(os.path.join(path_name, fn), 'r', 'utf-8')
-        txt = f.read().decode('utf-8')
-        f.close()
-        content_list.append(list([txt]))
+    for fn in range(files_num/2):
+        try:
+            f = codecs.open(os.path.join(path_name, r'%d.txt' % fn), 'r', 'utf-8')
+            txt = f.read().decode('utf-8')
+            content_list.append(list([txt]))
+        except IOError, e:
+            print u'特征提取导入数据异常，IOError ', e.message
+        finally:
+            f.close()
     queue.put((content_list, category))  # 包含了： （每篇新闻处理后的结果[[],[]]，这一类新闻的类别str）

@@ -80,7 +80,7 @@ def train():
 
     print queue_pool.empty()
     while not queue_pool.empty():
-        res = queue_pool.get(True)
+        res = queue_pool.get(True)  # (p_post_list, dir_name, p_vocab_set)
         for lst in res[0]:
             print lst
             post_list.append((lst, res[1]))
@@ -101,7 +101,8 @@ def train():
             f.close()
     '''
     mid_time = time.time()
-    print 'read test files cost total time %.4f seconds' % (mid_time - mid_time2)  # 847秒
+    print 'read test files cost total time %.4f seconds' % (mid_time - mid_time2)  # 847秒 / 419s
+    
     train_native_bayes_classifier(features, post_list, vocab_set)
 
     end_time = time.time()
@@ -177,7 +178,7 @@ def tests():
 
 if __name__ == '__main__':
     # main()  # 运行程序
-    import_data_from_excel()
+    # import_data_from_excel()
     # build_features_lib()
-    # train()
+    train()
     # classify_text()

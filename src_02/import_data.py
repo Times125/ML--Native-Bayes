@@ -37,8 +37,7 @@ def import_data_from_excel():
                 f = codecs.open(os.path.join(tmp_path, str(a) + r'.txt'), 'w', 'utf-8', errors='ignore')
                 txt = str(row.value).decode('ISO-8859-15').encode('utf-8')
                 txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符
-                if len(txt) < 100 :
-                    print '---------------------None'
+                if len(txt) <= 100:  # 舍弃过短短的文章
                     continue
                 a += 1
                 f.write(txt)

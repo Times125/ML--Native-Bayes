@@ -32,13 +32,15 @@ def main():
             usage()
         if opt in ('-e', '--excel'):
             import_data_from_excel()
+            sys.exit('import successfully')
         if opt in ('-l', '--lib'):
             build_features_lib()
+            sys.exit('build successfully')
         if opt in ('-t', '--train'):
             train()
+            sys.exit('train successful')
         if opt in ('-c', '--classify'):
-            res = classify_text(' '.join(args))
-            print u'分类结果', res
+            res = classify_text(' '.join(args).decode('utf-8'))
             sys.exit(res)
 
 
@@ -50,7 +52,7 @@ def classify_text(txt):
     for item in res_word_list:
         wait_for_class['contains(%s)' % item] = (item in all_words)
     res = classifier.classify(wait_for_class)
-    print res
+    print u'分类结果', res
     return res
 
 def usage():
@@ -82,29 +84,12 @@ def train():
     while not queue_pool.empty():
         res = queue_pool.get(True)  # (p_post_list, dir_name, p_vocab_set)
         for lst in res[0]:
-            print lst
-            post_list.append((lst, res[1]))
-        vocab_set = vocab_set | res[2]
-    
-    '''
-    # 程序耗时部分1，需要修改
-    for dir_name in dirs:
-        files_num = len(os.listdir(os.path.join(mac_path, dir_name)))  # 一个类目录下文件数量
-        print files_num
-        fp = os.path.join(mac_path, dir_name)
-        for i in range(files_num/2, files_num):
-            f = codecs.open(os.path.join(fp, r'%d.txt' % i), 'r', 'utf-8')
-            txt = f.read()
-            res_word_list, doc_set = text_parse(txt)  # 读取测试文本
-            post_list.append((res_word_list, dir_name))  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
-            vocab_set = vocab_set | doc_set
-            f.close()
-    '''
+            post_list.append(lst)
+        vocab_set = vocab_set | res[1]
+
     mid_time = time.time()
     print 'read test files cost total time %.4f seconds' % (mid_time - mid_time2)  # 847秒 / 419s
-    
     train_native_bayes_classifier(features, post_list, vocab_set)
-
     end_time = time.time()
     print 'method train() cost total time %.4f seconds' % (end_time - start_time)  #
 
@@ -114,16 +99,28 @@ def deal_train_doc(dir_name, queue_pool):
     p_vocab_set = set([])
     fp = os.path.join(mac_path, dir_name)
     files_num = len(os.listdir(fp))  # 一个类目录下文件数量
-    print u'此目录下共%d个txt文件' % files_num, 'deal_train_doc subprocess id %d' % os.getpid()
+    print dir_name, u'此目录下共%d个txt文件' % files_num, 'deal_train_doc subprocess id %d' % os.getpid()
     for i in range(files_num / 2, files_num):
-        f = codecs.open(os.path.join(fp, r'%d.txt' % i), 'rb', 'utf-8')
-        txt = f.read()
-        p_res_word_list, p_doc_set = text_parse(txt)  # 读取测试文本
-        p_post_list.append((p_res_word_list, dir_name))  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
-        p_vocab_set = p_vocab_set | p_doc_set
-        f.close()
+        with codecs.open(os.path.join(fp, r'%d.txt' % i), 'rb', 'utf-8') as reader:
+            txt = reader.read()  # .decode('utf-8')
+            p_res_word_list, p_doc_set = text_parse(txt)  # 读取测试文本
+            p_post_list.append((p_res_word_list, dir_name))  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
+            p_vocab_set = p_vocab_set | p_doc_set
     print len(p_post_list), dir_name
-    queue_pool.put((p_post_list, dir_name, p_vocab_set))
+    queue_pool.put((p_post_list, p_vocab_set))
+
+'''
+创建程序必要的文件目录
+'''
+
+def check_dirs():
+    for dir_name in dirs:
+        m_path = os.path.join(mac_path, dir_name)
+        f_path = os.path.join(mac_f_path)
+        if not os.path.exists(m_path):
+            os.makedirs(m_path)
+        if not os.path.exists(f_path):
+            os.makedirs(f_path)
 
 def tests():
     train = [({'a': 1, 'b': 0, 'c': 1}, 'y'),
@@ -178,7 +175,10 @@ def tests():
 
 if __name__ == '__main__':
     # main()  # 运行程序
-    # import_data_from_excel()
-    # build_features_lib()
+    program_start_time = time.time()
+    check_dirs()
+    import_data_from_excel()
+    build_features_lib()
     train()
-    # classify_text()
+    print u'全套程序运行共花费时间%.4f', (time.time() - program_start_time)
+    classify_text(u'Google plans to stop Amazon\'s Fire TV streaming devices being able to use YouTube from the start of 2018. The search giant has also blocked a workaround that Amazon introduced to restore YouTube access to a screen-based version of its smart speaker. Experts say the steps mark an escalation of a business row in which consumers have been caught up in the fallout. Amazon had previously stopped selling several of Google\'s hardware products. It removed the latest Nest-branded smart home kit - including a home security system and a new version of its thermostat - from its online stores last month. And since 2015, Amazon has refused to sell Google\'s Chromecast video and audio-streaming dongles. The latest development coincides with the release of Amazon\'s Prime Video app for the Apple TV. Its absence had previously put Apple\'s set-top box at a disadvantage to Amazon\'s Fire TV line-up. Fire TV owners have reported that trying to watch YouTube clips now prompts an alert warning them that they will lose the functionality on 1 January. I use firestick to watch YouTube primarily and suddenly this message appears today. No #youtube on #FireTV from 1/1/18. Great! pic.twitter.com/Pe53chi4ft End of Twitter post by @eqbalashraf "We\'ve been trying to reach agreement with Amazon to give consumers access to each other\'s products and services," Google said in a statement. "But Amazon doesn\'t carry Google products like Chromecast and Google Home, doesn\'t make Prime Video available for Google Cast users, and last month stopped selling some of Nest\'s latest products. "Given this lack of reciprocity, we are no longer supporting YouTube on Echo Show and FireTV. We hope we can reach an agreement to resolve these issues soon." Google had stopped Amazon\'s Echo Show speakers being able to play YouTube videos in September, on the basis that the retailer had altered the way the software worked. The version Amazon presented had lacked next video recommendations, subscriptions and other features - but these were restored in November, when Amazon made the device present a more normal view of YouTube. But, according to Techcrunch, the search firm believes its rights have still been violated because Amazon continues to overlay its own voice controls. Amazon has responded, saying: "Echo Show and Fire TV now display a standard web view of YouTube.com and point customers directly to YouTube\'s existing website. Google is setting a disappointing precedent by selectively blocking customer access to an open website. We hope to resolve this with Google as soon as possible." The dispute disadvantages consumers in two ways. Users will be unable to access a service that Amazon\'s devices had promised to deliver. And Amazon\'s refusal to even allow third-parties to sell certain Google products via its site makes it harder to find them at their lowest price. "It\'s a surprising turn of events in both respects," commented Ben Wood from the CCS Insight tech consultancy. "YouTube is all about maximising the number of people who see its content, and Amazon wants to be the so-called \'everything store\'It\'s all very unfortunate for consumers, who will have little understanding of the commercial tensions between the two companies. "I wonder whether the next step might be the intervention of a regulator to investigate whether they are behaving anti-competitively.')

@@ -8,10 +8,11 @@
 """
 __author__ = 'lch02'
 
-win_f_path = r'E:\Repositories\ML--Native-Bayes\features'
-mac_f_path = r'/Users/lch/Desktop/pycharm/Bayes/features'
-win_path = r'E:\Repositories\ML--Native-Bayes\material'
-mac_path = r'/Users/lch/Desktop/pycharm/Bayes/material'
-win_test_path = r'E:\Repositories\ML--Native-Bayes\test'
-mac_test_path = r'/Users/lch/Desktop/pycharm/Bayes/test'
+mac_f_path = r'E:\Repositories\ML--Native-Bayes\features'
+# mac_f_path = r'/Users/lch/Desktop/pycharm/Bayes/features'
+mac_path = r'E:\Repositories\ML--Native-Bayes\material'
+# mac_path = r'/Users/lch/Desktop/pycharm/Bayes/material'
+mac_test_path = r'E:\Repositories\ML--Native-Bayes\test'
+# mac_test_path = r'/Users/lch/Desktop/pycharm/Bayes/test'
+
 dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology']

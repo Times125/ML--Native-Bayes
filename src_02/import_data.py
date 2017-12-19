@@ -33,22 +33,14 @@ def import_data_from_excel():
         tmp_path = os.path.join(mac_path, dir_name)
         a = 0
         for row in sheet['A']:
-            try:
-                f = codecs.open(os.path.join(tmp_path, str(a) + r'.txt'), 'w', 'utf-8', errors='ignore')
-                txt = str(row.value).decode('ISO-8859-15').encode('utf-8')
-                txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符
-                if len(txt) <= 100:  # 舍弃过短短的文章
-                    continue
+            file_name = os.path.join(tmp_path, str(a) + r'.txt')
+            txt = str(row.value).decode('ISO-8859-15').encode('utf-8')
+            txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符
+            if not txt or len(txt) <= 150:  # 舍弃过短短的文章
+                continue
+            with codecs.open(file_name, 'wb', 'utf-8', errors='ignore') as writer:
+                writer.write(txt)
                 a += 1
-                f.write(txt)
-            except IOError, e:
-                print dir_name, u'从Excel导入数据异常，IOError ', e.message
-            except UnicodeDecodeError, e:
-                print dir_name, u'从Excel导入数据异常，UnicodeDecodeError ', e.message
-            except UnicodeEncodeError, e:
-                print dir_name, u'从Excel导入数据异常，UnicodeEncodeError ', e.message
-            finally:
-                f.close()
         log_info[dir_name] = a
         end_time = time.time()
     for item in log_info:
@@ -64,26 +56,13 @@ def import_data_from_excel():
 def import_features_from_lib():
     features = []
     all_features_words = set([])
-    if not os.path.exists(mac_f_path):
-        # build_features_lib()
-        print 'import_features_from_lib ----------------!!!'
-        return 0
-    else:
-        for dir_name in dirs:
-            try:
-                f = codecs.open(os.path.join(mac_f_path, dir_name + '.txt'), 'rb')
-                txt = f.read().decode('ISO-8859-15').encode('utf-8')
-                txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符
-                lst = txt.split(' ')
-                print dir_name, "特征包含共%d个词"%len(lst)
-                all_features_words = all_features_words | set(lst)
-                features.append((lst, dir_name))  # [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
-            except IOError, e:
-                print dir_name, u'特征库读取异常，IOError ', e.message
-            except UnicodeDecodeError, e:
-                print dir_name, u'特征库读取异常，UnicodeDecodeError ', e.message
-            except UnicodeEncodeError, e:
-                print dir_name, u'特征库读取异常，UnicodeEncodeError ', e.message
-            finally:
-                f.close()
+    for dir_name in dirs:
+        file_name = os.path.join(mac_f_path, dir_name + '.txt')
+        with codecs.open(file_name, 'rb') as reader:
+            txt = reader.read().decode('ISO-8859-15').encode('utf-8')
+            txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符
+            lst = txt.split(' ')
+            print dir_name, "特征包含共%d个词" % len(lst)
+            all_features_words = all_features_words | set(lst)
+            features.append((lst, dir_name))  # [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
     return features, all_features_words

@@ -7,14 +7,11 @@
 @Description: 文本处理，构建自己的新闻语料库
 """
 
-import Queue as queue_t
+import Queue
 import codecs
-import os
-
 import time
+import os
 from collections import Counter
-
-
 from threading import Thread
 from file_path_constant import *
 from nltk import pos_tag
@@ -35,11 +32,10 @@ WordNetLemmatizer.__class__
 stopwords.ensure_loaded()
 wn.ensure_loaded()
 '''
+
 '''
 文本处理，包括分词，去停用词、去无用词、词形还原等
 '''
-
-
 def text_parse(input_text):
     sentence = input_text.lower()
     lemmatizer = WordNetLemmatizer()  # 词形还原
@@ -51,14 +47,12 @@ def text_parse(input_text):
                   | (?:[,.;'"?():-_`])"""
     tag_list = set(['TO', 'RB', 'RBR', 'RBRS', 'UH', 'WDT', 'WP', 'WP$', 'WRB', 'SYM', 'RP', 'PRP', 'PRP$', 'CD'])
     word_list = regexp_tokenize(sentence, pattern)
-
     filter_word = [w for w in word_list if w not in stopwords.words('english') and w not in special_tag]  # 去停用词和特殊标点符号
     word_tag = pos_tag(filter_word)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')]
-
     res_word_list = []
     for i in range(0, len(word_tag)):  # 去掉副词、介词、小品词、疑问词、代词、人称代词、所有格代名词等
         if word_tag[i][1] in tag_list:
-            pass
+            continue
         else:
             word = lemmatizer.lemmatize(word_tag[i][0])
             res_word_list.append(word)
@@ -179,7 +173,7 @@ def get_class_features():
     ene = []
     tec = []
     sec = []
-    qt = queue_t.Queue()  # 线程用的队列
+    qt = Queue.Queue()  # 线程用的队列
     pool = Pool(7)  # 开启7个进程
     manager = Manager()
     qp = manager.Queue()  # 进程用的队列
@@ -202,32 +196,6 @@ def get_class_features():
     for tup in files_list:  # [（[[doc1],[doc2]]，cat1）,([[doc1],[doc2]]，cat2）,...,([[doc1],[doc2]]，cat7）]
         # print tup[1], len(files_list)
         pool.apply_async(deal_doc, (tup[0], tup[1], qp))
-        '''
-        if tup[1] == dirs[0]:
-            print len(tup[0]),'---', tup[1]
-            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
-            
-            for per_doc in tup[0]:
-                res_word_list, doc_set = text_parse(per_doc[0])
-                post_list.append(res_word_list)
-                total_vocab_set = total_vocab_set | doc_set
-                m_categories.append(tup[1])
-            
-        elif tup[1] == dirs[1]:
-            print len(tup[0]), '---', tup[1]
-            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
-        elif tup[1] == dirs[2]:
-            print len(tup[0]), '---', tup[1]
-            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
-        elif tup[1] == dirs[3]:
-            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
-        elif tup[1] == dirs[4]:
-            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
-        elif tup[1] == dirs[5]:
-            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
-        elif tup[1] == dirs[6]:
-            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
-        '''
     pool.close()  # 关闭子进程
     pool.join()  # 等待进程同步
     print 'size------', qp.empty()
@@ -284,7 +252,8 @@ def deal_doc(n_list, category, qp):
         p_vocab_set = p_vocab_set | doc_set
         p_categories.append(category)
 
-    qp.put((p_list, p_vocab_set, p_categories))
+    res = (p_list, p_vocab_set, p_categories)
+    qp.put(res)
 
 
 '''
@@ -297,12 +266,9 @@ def read_file(path_name, category, queue):
     files_num = len(path_dir)
     content_list = []
     for fn in range(files_num/2):
-        try:
-            f = codecs.open(os.path.join(path_name, r'%d.txt' % fn), 'r', 'utf-8')
-            txt = f.read().decode('utf-8')
+        file_name = os.path.join(path_name, r'%d.txt' % fn)
+        with codecs.open(file_name, 'rb', 'utf-8') as reader:
+            txt = reader.read().decode('utf-8')
             content_list.append(list([txt]))
-        except IOError, e:
-            print u'特征提取导入数据异常，IOError ', e.message
-        finally:
-            f.close()
-    queue.put((content_list, category))  # 包含了： （每篇新闻处理后的结果[[],[]]，这一类新闻的类别str）
+    res = (content_list, category)
+    queue.put(res)  # 包含了： （每篇新闻处理后的结果[[],[]]，这一类新闻的类别str）

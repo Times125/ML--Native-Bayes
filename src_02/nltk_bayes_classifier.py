@@ -20,23 +20,16 @@ test_set = []
 
 
 def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
-
     global word_features
     word_features = m_features   # [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
-
     train_set = post_list[::2]  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
     test_set = post_list[1::2]
-
     train_data = [(doc_features(doc, category), category) for (doc, category) in train_set]
     test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
-
     classifier = nltk.classify.NaiveBayesClassifier.train(train_data)
     f = open(os.path.join(mac_f_path, 'my_classifier_pickle'), 'wb')
     pickle.dump(classifier, f)
     f.close()
-
-    # for i in range(0, len(test_data)):
-    #   print u'分类结果', classifier.classify(test_data[i][0])
     print 'test_accuracy is %.4f' % nltk.classify.accuracy(classifier, test_data)
 
 '''
@@ -55,7 +48,6 @@ def get_model():
 
 
 def doc_features(doc, category):
-    print type(doc)
     doc_words = set(doc)
     d_features = {}
     if category == categories[0]:

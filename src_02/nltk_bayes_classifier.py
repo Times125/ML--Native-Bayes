@@ -8,6 +8,7 @@
 """
 import nltk
 import pickle
+import random
 from import_data import *
 __author__ = 'Lich'
 
@@ -22,8 +23,11 @@ test_set = []
 def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     global word_features
     word_features = m_features   # [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
-    train_set = post_list[::2]  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
-    test_set = post_list[1::2]
+    random.shuffle(post_list)  # 打乱顺序
+    lst_sum = len(post_list)
+    pre = round(lst_sum * 0.8)  # 前80%的数据作为训练集,后20%的数据作为测试集
+    train_set = post_list[:pre]  # [('文档所含单词集','类别'),('文档所含单词集','类别')]
+    test_set = post_list[pre:]
     train_data = [(doc_features(doc, category), category) for (doc, category) in train_set]
     test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
     classifier = nltk.classify.NaiveBayesClassifier.train(train_data)

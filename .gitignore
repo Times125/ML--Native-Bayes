@@ -1,4 +1,4 @@
 .idea/
 *.pyc
-material
-features
+material/
+features/

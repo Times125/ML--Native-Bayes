@@ -25,16 +25,15 @@ def import_data_from_excel():
     start_time = time.time()
     log_info = {}
     for dir_name in dirs:
-        wb = load_workbook(os.path.join(mac_test_path, dir_name + r'.xlsx'))
-        print wb.sheetnames
+        wb = load_workbook(os.path.join(test_path, dir_name + r'.xlsx'))
         sheet = wb.get_sheet_by_name("sheet1")
-        tmp_path = os.path.join(mac_path, dir_name)
+        tmp_path = os.path.join(material_path, dir_name)
         a = 0
         for row in sheet['A']:
             file_name = os.path.join(tmp_path, str(a) + r'.txt')
             txt = str(row.value).decode('ISO-8859-15').encode('utf-8')
-            txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符
-            if not txt or len(txt) <= 150:  # 舍弃过短短的文章
+            txt = re.sub(r'[^\x00-\xFF]+', '', txt)  # 去除所有非英法字符
+            if not txt or len(txt) <= 150:  # 舍弃过短的文章
                 continue
             with codecs.open(file_name, 'wb', 'utf-8', errors='ignore') as writer:
                 writer.write(txt)
@@ -49,13 +48,11 @@ def import_data_from_excel():
 '''
 从feature目录下的特征库读取特征
 '''
-
-
 def import_features_from_lib():
     features = []
     all_features_words = set([])
     for dir_name in dirs:
-        file_name = os.path.join(mac_f_path, dir_name + '.txt')
+        file_name = os.path.join(feature_path, dir_name + '.txt')
         with codecs.open(file_name, 'rb') as reader:
             txt = reader.read().decode('ISO-8859-15').encode('utf-8')
             txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符

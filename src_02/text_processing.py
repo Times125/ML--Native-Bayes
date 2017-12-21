@@ -11,6 +11,7 @@ import Queue
 import codecs
 import time
 import os
+import langid
 from collections import Counter
 from threading import Thread
 from config import *
@@ -36,21 +37,22 @@ wn.ensure_loaded()
 '''
 文本处理，包括分词，去停用词、去无用词、词形还原等
 '''
-def text_parse(input_text, language='eng'):
+def text_parse(input_text):
     sentence = input_text.lower()
+    language = langid.classify(sentence)[0]
     lemmatizer = WordNetLemmatizer()  # 词形还原
     vocab_set = set([])  # 记录所有出现的单词
-    special_tag = set(['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’', '“', '”', '！', '：', '^', '/','[', ']'])
+    special_tag = set(['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’', '“', '”', '！', '：', '^', '/',']', '['])
     pattern = r""" (?x)(?:[a-z]\.)+ 
                   | \d+(?:\.\d+)?%?\w+
                   | \w+(?:[-']\w+)*
                   | (?:[,.;'"?():-_`])"""
 
-    tag_list = set(['TO', 'RB', 'RBR', 'RBRS', 'UH', 'WDT', 'WP', 'WP$', 'WRB', 'SYM', 'RP', 'PRP', 'PRP$', 'CD', 'POS',':'])
+    tag_list = set(['TO', 'RB', 'RBR', 'RBRS', 'UH', 'WDT', 'WP', 'WP$', 'WRB', 'SYM', 'RP', 'PRP', 'PRP$', 'CD', 'POS', ':'])
     word_list = regexp_tokenize(sentence, pattern)
-    if language is 'eng':
+    if language == 'en':
         filter_word = [w for w in word_list if w not in stopwords.words('english') and w not in special_tag]  # 去停用词和特殊标点符号
-    else:
+    if language == 'fr':
         filter_word = [w for w in word_list if w not in stopwords.words('french') and w not in special_tag]  # 去停用词和特殊标点符号
     word_tag = pos_tag(filter_word, tagset=None, lang=language)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')
     res_word_list = []
@@ -71,7 +73,7 @@ def text_parse(input_text, language='eng'):
 '''
 
 
-def get_doc_features(input_matrix_data, vocab_set, threshold=0.008):
+def get_doc_features(input_matrix_data, vocab_set, thresholds=0.008):
     start_time = time.time()
     input_matrix = input_matrix_data
     doc_nums = len(input_matrix)  # 输入的文档总数
@@ -86,7 +88,7 @@ def get_doc_features(input_matrix_data, vocab_set, threshold=0.008):
     for i in range(0, len(sorted_tf_idf)):
         tmp = []  # 不能保证特征里面没有重复的值
         for tuple_w in sorted_tf_idf[i]:
-            if tuple_w[1] >= threshold:
+            if tuple_w[1] >= thresholds:
                 tmp.append(tuple_w[0])
         doc_features.append(tmp)
         del tmp
@@ -170,20 +172,19 @@ def get_class_features():
     total_vocab_set = set([])
     features = []
     m_categories = []
-    env = []
-    eco = []
-    pol = []
-    cul = []
-    ene = []
-    tec = []
-    sec = []
+    # 'social_fr', 'political_fr', 'international_fr', 'economy_fr'
+    clas = []
+
+    for i in range(len(categories)):
+        clas.append([])
+
     qt = Queue.Queue()  # 线程用的队列
-    pool = Pool(7)  # 开启7个进程
+    pool = Pool(len(dirs))  # 开启n个进程
     manager = Manager()
     qp = manager.Queue()  # 进程用的队列
     # 多线程读文件
     for item in dirs:
-        file_path = os.path.join(mac_path, item)
+        file_path = os.path.join(material_path, item)
         t = Thread(target=read_file, args=(file_path, item, qt))
         threads.append(t)
         t.start()
@@ -198,7 +199,6 @@ def get_class_features():
     t_time = time.time()
     print 'Parent process ID %d' % os.getpid()
     for tup in files_list:  # [（[[doc1],[doc2]]，cat1）,([[doc1],[doc2]]，cat2）,...,([[doc1],[doc2]]，cat7）]
-        # print tup[1], len(files_list)
         pool.apply_async(deal_doc, (tup[0], tup[1], qp))
     pool.close()  # 关闭子进程
     pool.join()  # 等待进程同步
@@ -212,7 +212,31 @@ def get_class_features():
     t_time_end = time.time()
     print u'进程耗时%.4f 秒' % (t_time_end - t_time) # 453秒
     print u'文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), u'个不重复单词。'
-    docs_features = get_doc_features(post_list, total_vocab_set, threshold)  # [[],[],..,[]]
+    docs_features = get_doc_features(post_list, total_vocab_set, threshold)  # 获得每篇文档的特征[[],[],..,[]]
+
+    tmp_dict = {}
+    for i in range(len(m_categories)):
+        for j in range(len(categories)):
+            if categories[j] == m_categories[i]:
+                clas[j].extend(docs_features[i])
+                tmp_dict[m_categories[i]] = clas[j]
+
+    print len(m_categories),' ', len(docs_features),' ',len(categories)
+    print tmp_dict.keys()
+    for cat in categories:
+        features.append((list(set(tmp_dict[cat])), cat))
+    """
+    env = []
+    eco = []
+    pol = []
+    cul = []
+    ene = []
+    tec = []
+    sec = []
+    fr_soc = []
+    fr_pol = []
+    fr_int = []
+    fr_eco = []
     for i in range(0, len(m_categories)):
         if m_categories[i] == 'culture':
             cul.extend(docs_features[i])
@@ -235,7 +259,7 @@ def get_class_features():
     features.append((list(set(sec)), 'security'))
     features.append((list(set(tec)), 'technology'))
     features.append((list(set(ene)), 'energy'))
-
+    """
     end_time = time.time()
     print 'method get_class_features() cost total time %0.4f seconds' % (end_time - start_time)  # 530秒
     return features
@@ -245,8 +269,6 @@ def get_class_features():
 处理一个文档，多线程用的
 '''
 def deal_doc(n_list, category, qp):
-    import os
-    print 'deal_doc subprocess id %d' % os.getpid()
     p_list = []
     p_categories = []
     p_vocab_set = set([])
@@ -255,7 +277,6 @@ def deal_doc(n_list, category, qp):
         p_list.append(res_word_list)
         p_vocab_set = p_vocab_set | doc_set
         p_categories.append(category)
-
     res = (p_list, p_vocab_set, p_categories)
     qp.put(res)
 
@@ -263,8 +284,6 @@ def deal_doc(n_list, category, qp):
 '''
 读取某一类文件夹的一半文件
 '''
-
-
 def read_file(path_name, category, queue):
     path_dir = os.listdir(path_name)
     files_num = len(path_dir)

@@ -27,20 +27,31 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     train_set = post_list[:pre]  # [('文档所含单词集','类别'),..,('文档所含单词集','类别')]
     test_set = post_list[pre:]
 
-    for i in range(150):
-        test_set[i] = (test_set[i][0], categories[random.randint(0, 6)])
-
     train_data = [(doc_features(doc, category), category) for (doc, category) in train_set]
     test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
     classifier = nltk.classify.NaiveBayesClassifier.train(train_data)
+    print 'test_accuracy is %.7f' % nltk.classify.accuracy(classifier, test_data)
 
+    # 交叉验证
+    aft = int(round(lst_sum * 0.2))
+    j_train_set = post_list[aft:]  # [('文档所含单词集','类别'),..,('文档所含单词集','类别')]
+    j_test_set = post_list[:aft]
+
+    j_train_data = [(doc_features(doc, category), category) for (doc, category) in j_train_set]
+    j_test_data = [(doc_features(doc, category), category) for (doc, category) in j_test_set]
+    classifier = nltk.classify.NaiveBayesClassifier.train(j_train_data)
+    print 'j_test_accuracy is %.7f' % nltk.classify.accuracy(classifier, j_test_data)
+
+    """
     print len(train_data), '--', len(test_data)
     print len(train_set), '--', len(test_set)
     for it in test_data:
         res = classifier.classify(it[0])
-        print it[1], '< --------------- >', it[1] == res
-    print 'test_accuracy is %.7f' % nltk.classify.accuracy(classifier, test_data)
-    f = open(os.path.join(mac_f_path, 'my_classifier_pickle'), 'wb')
+        if not (it[1] == res):
+            print it[1]
+    """
+
+    f = open(os.path.join(model_path, 'my_classifier_pickle'), 'wb')
     pickle.dump(classifier, f)
     f.close()
 
@@ -48,7 +59,7 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
 获取保存的模型
 '''
 def get_model():
-    f = open(os.path.join(mac_f_path, 'my_classifier_pickle'), 'rb')
+    f = open(os.path.join(model_path, 'my_classifier_pickle'), 'rb')
     classifier = pickle.load(f)
     f.close()
     return classifier

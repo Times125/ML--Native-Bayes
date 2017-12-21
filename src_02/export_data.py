@@ -30,7 +30,7 @@ def build_features_lib():
     return 0
 
 def write_to_file(item):
-    file_name = os.path.join(mac_f_path, item[1] + r'.txt')
+    file_name = os.path.join(feature_path, item[1] + r'.txt')
     with codecs.open(file_name, 'wb', 'utf-8') as writer:
         txt = ' '.join(item[0])  # list 转 str
         writer.write(txt)

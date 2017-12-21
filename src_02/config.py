@@ -23,6 +23,7 @@ threshold = 0.02
 
 dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology', 'social_fr', 'political_fr', 'international_fr', 'economy_fr']
 categories = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology', 'social_fr', 'political_fr', 'international_fr', 'economy_fr']
+fr_categories = ['social_fr', 'political_fr', 'international_fr', 'economy_fr']
 
 '''
 # 法语

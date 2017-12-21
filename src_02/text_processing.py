@@ -37,9 +37,8 @@ wn.ensure_loaded()
 '''
 文本处理，包括分词，去停用词、去无用词、词形还原等
 '''
-def text_parse(input_text):
+def text_parse(input_text, language='en'):
     sentence = input_text.lower()
-    language = langid.classify(sentence)[0]
     lemmatizer = WordNetLemmatizer()  # 词形还原
     vocab_set = set([])  # 记录所有出现的单词
     special_tag = set(['.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’', '“', '”', '！', '：', '^', '/',']', '['])
@@ -52,7 +51,7 @@ def text_parse(input_text):
     word_list = regexp_tokenize(sentence, pattern)
     if language == 'en':
         filter_word = [w for w in word_list if w not in stopwords.words('english') and w not in special_tag]  # 去停用词和特殊标点符号
-    if language == 'fr':
+    elif language == 'fr':
         filter_word = [w for w in word_list if w not in stopwords.words('french') and w not in special_tag]  # 去停用词和特殊标点符号
     else:
         return [], set([])
@@ -201,8 +200,7 @@ def get_class_features():
     t_time = time.time()
     print 'Parent process ID %d' % os.getpid()
     for tup in files_list:  # [（[[doc1],[doc2]]，cat1）,([[doc1],[doc2]]，cat2）,...,([[doc1],[doc2]]，cat7）]
-        if tup[1] == 'international_fr':
-            pool.apply_async(deal_doc, (tup[0], tup[1], qp))
+        pool.apply_async(deal_doc, (tup[0], tup[1], qp))
     pool.close()  # 关闭子进程
     pool.join()  # 等待进程同步
     print 'size------', qp.empty()
@@ -213,7 +211,7 @@ def get_class_features():
         total_vocab_set = total_vocab_set | res[1]
         m_categories.extend(res[2])
         print a
-        a += 1
+        a
     t_time_end = time.time()
     print u'进程耗时%.4f 秒' % (t_time_end - t_time) # 453秒
     print u'文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), u'个不重复单词。'
@@ -221,7 +219,7 @@ def get_class_features():
 
     tmp_dict = {}
     for i in range(0,len(m_categories)):
-        for j in range(0,len(categories)):
+        for j in range(0, len(categories)):
             if categories[j] == m_categories[i]:
                 clas[j].extend(docs_features[i])
                 ck = categories[j]
@@ -276,20 +274,19 @@ def get_class_features():
 处理一个文档，多线程用的
 '''
 def deal_doc(n_list, category, qp):
-
     p_list = []
     p_categories = []
     p_vocab_set = set([])
     print 'sub process ID %d' % os.getpid()
     for per_doc in n_list:
-        res_word_list, doc_set = text_parse(per_doc[0])
-        if res_word_list is None or doc_set is None:
-            continue
+        res_word_list = []
+        doc_set = set([])
+        if category in fr_categories:
+            res_word_list, doc_set = text_parse(per_doc[0], 'fr')
         p_list.append(res_word_list)
         p_vocab_set = p_vocab_set | doc_set
         p_categories.append(category)
     res = (p_list, p_vocab_set, p_categories)
-    print res,'cccccccccccc'
     qp.put(res, True)
 
 

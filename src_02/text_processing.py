@@ -13,7 +13,7 @@ import time
 import os
 from collections import Counter
 from threading import Thread
-from file_path_constant import *
+from config import *
 from nltk import pos_tag, pos_tag_sents
 from nltk.corpus import stopwords as stopwords
 from nltk.stem import WordNetLemmatizer
@@ -47,13 +47,12 @@ def text_parse(input_text, language='eng'):
                   | (?:[,.;'"?():-_`])"""
 
     tag_list = set(['TO', 'RB', 'RBR', 'RBRS', 'UH', 'WDT', 'WP', 'WP$', 'WRB', 'SYM', 'RP', 'PRP', 'PRP$', 'CD', 'POS',':'])
-    word_list =regexp_tokenize(sentence, pattern)
+    word_list = regexp_tokenize(sentence, pattern)
     if language is 'eng':
         filter_word = [w for w in word_list if w not in stopwords.words('english') and w not in special_tag]  # 去停用词和特殊标点符号
     else:
         filter_word = [w for w in word_list if w not in stopwords.words('french') and w not in special_tag]  # 去停用词和特殊标点符号
-    word_tag = pos_tag(filter_word, tagset=None, lang=language)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')]
-    print word_tag
+    word_tag = pos_tag(filter_word, tagset=None, lang=language)  # 词性标注，返回标记列表[('Codeine', 'NNP'), ('15mg', 'CD')
     res_word_list = []
     for i in range(0, len(word_tag)):  # 去掉副词、介词、小品词、疑问词、代词、人称代词、所有格代名词等
         if word_tag[i][1] in tag_list:
@@ -213,7 +212,7 @@ def get_class_features():
     t_time_end = time.time()
     print u'进程耗时%.4f 秒' % (t_time_end - t_time) # 453秒
     print u'文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), u'个不重复单词。'
-    docs_features = get_doc_features(post_list, total_vocab_set, 0.01)  # [[],[],..,[]]
+    docs_features = get_doc_features(post_list, total_vocab_set, threshold)  # [[],[],..,[]]
     for i in range(0, len(m_categories)):
         if m_categories[i] == 'culture':
             cul.extend(docs_features[i])
@@ -229,13 +228,13 @@ def get_class_features():
             sec.extend(docs_features[i])
         elif m_categories[i] == 'technology':
             tec.extend(docs_features[i])
-    features.append((env, 'environment'))
-    features.append((eco, 'economy'))
-    features.append((pol, 'political'))
-    features.append((cul, 'culture'))
-    features.append((sec, 'security'))
-    features.append((tec, 'technology'))
-    features.append((ene, 'energy'))
+    features.append((list(set(env)), 'environment'))
+    features.append((list(set(eco)), 'economy'))
+    features.append((list(set(pol)), 'political'))
+    features.append((list(set(cul)), 'culture'))
+    features.append((list(set(sec)), 'security'))
+    features.append((list(set(tec)), 'technology'))
+    features.append((list(set(ene)), 'energy'))
 
     end_time = time.time()
     print 'method get_class_features() cost total time %0.4f seconds' % (end_time - start_time)  # 530秒

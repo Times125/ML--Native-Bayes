@@ -11,7 +11,7 @@ import time
 import sys
 import os
 import codecs
-from file_path_constant import *
+from config import *
 from nltk_bayes_classifier import import_features_from_lib, get_model
 from nltk_bayes_classifier import import_data_from_excel, train_native_bayes_classifier
 from export_data import build_features_lib
@@ -24,7 +24,7 @@ __author__ = 'Lich'
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'heltc:', ['classify=', 'help', 'excel', 'train', 'lib'])
+        opts, args = getopt.getopt(sys.argv[1:], 'heltac:', ['classify=', 'help', 'excel', 'train', 'lib', 'auto'])
     except getopt.GetoptError:
         sys.exit(-1)
     for opt, value in opts:
@@ -39,8 +39,13 @@ def main():
         if opt in ('-t', '--train'):
             train()
             sys.exit('train successful')
+        if opt in ('-a', '--auto'):
+            import_data_from_excel()
+            build_features_lib()
+            train()
+            sys.exit('auto successfully')
         if opt in ('-c', '--classify'):
-            res = classify_text(' '.join(args).decode('utf-8'))
+            res = classify_text(' '.join(args))
             sys.exit(res)
 
 
@@ -82,7 +87,7 @@ def train():
 
     print queue_pool.empty()
     while not queue_pool.empty():
-        res = queue_pool.get(True)  # (p_post_list, dir_name, p_vocab_set)
+        res = queue_pool.get(True)  # (p_post_list, p_vocab_set)
         for lst in res[0]:
             post_list.append(lst)
         vocab_set = vocab_set | res[1]
@@ -174,12 +179,12 @@ def tests():
 
 
 if __name__ == '__main__':
-    # main()  # 运行程序
-    program_start_time = time.time()
+    #program_start_time = time.time()
     check_dirs()
-    import_data_from_excel()
-    build_features_lib()
-    train()
-    print u'全套程序运行共花费时间%.4f', (time.time() - program_start_time)
+    main()  # 运行程序
+    # import_data_from_excel()
+    # build_features_lib()
+    # train()
+    #print u'全套程序运行共花费时间%.4f'%(time.time() - program_start_time)
     # tec
-    classify_text(u'Google plans to stop Amazon\'s Fire TV streaming devices being able to use YouTube from the start of 2018. The search giant has also blocked a workaround that Amazon introduced to restore YouTube access to a screen-based version of its smart speaker. Experts say the steps mark an escalation of a business row in which consumers have been caught up in the fallout. Amazon had previously stopped selling several of Google\'s hardware products. It removed the latest Nest-branded smart home kit - including a home security system and a new version of its thermostat - from its online stores last month. And since 2015, Amazon has refused to sell Google\'s Chromecast video and audio-streaming dongles. The latest development coincides with the release of Amazon\'s Prime Video app for the Apple TV. Its absence had previously put Apple\'s set-top box at a disadvantage to Amazon\'s Fire TV line-up. Fire TV owners have reported that trying to watch YouTube clips now prompts an alert warning them that they will lose the functionality on 1 January. I use firestick to watch YouTube primarily and suddenly this message appears today. No #youtube on #FireTV from 1/1/18. Great! pic.twitter.com/Pe53chi4ft End of Twitter post by @eqbalashraf "We\'ve been trying to reach agreement with Amazon to give consumers access to each other\'s products and services," Google said in a statement. "But Amazon doesn\'t carry Google products like Chromecast and Google Home, doesn\'t make Prime Video available for Google Cast users, and last month stopped selling some of Nest\'s latest products. "Given this lack of reciprocity, we are no longer supporting YouTube on Echo Show and FireTV. We hope we can reach an agreement to resolve these issues soon." Google had stopped Amazon\'s Echo Show speakers being able to play YouTube videos in September, on the basis that the retailer had altered the way the software worked. The version Amazon presented had lacked next video recommendations, subscriptions and other features - but these were restored in November, when Amazon made the device present a more normal view of YouTube. But, according to Techcrunch, the search firm believes its rights have still been violated because Amazon continues to overlay its own voice controls. Amazon has responded, saying: "Echo Show and Fire TV now display a standard web view of YouTube.com and point customers directly to YouTube\'s existing website. Google is setting a disappointing precedent by selectively blocking customer access to an open website. We hope to resolve this with Google as soon as possible." The dispute disadvantages consumers in two ways. Users will be unable to access a service that Amazon\'s devices had promised to deliver. And Amazon\'s refusal to even allow third-parties to sell certain Google products via its site makes it harder to find them at their lowest price. "It\'s a surprising turn of events in both respects," commented Ben Wood from the CCS Insight tech consultancy. "YouTube is all about maximising the number of people who see its content, and Amazon wants to be the so-called \'everything store\'It\'s all very unfortunate for consumers, who will have little understanding of the commercial tensions between the two companies. "I wonder whether the next step might be the intervention of a regulator to investigate whether they are behaving anti-competitively.')
+    # classify_text(u'Google plans to stop Amazon\'s Fire TV streaming devices being able to use YouTube from the start of 2018. The search giant has also blocked a workaround that Amazon introduced to restore YouTube access to a screen-based version of its smart speaker. Experts say the steps mark an escalation of a business row in which consumers have been caught up in the fallout. Amazon had previously stopped selling several of Google\'s hardware products. It removed the latest Nest-branded smart home kit - including a home security system and a new version of its thermostat - from its online stores last month. And since 2015, Amazon has refused to sell Google\'s Chromecast video and audio-streaming dongles. The latest development coincides with the release of Amazon\'s Prime Video app for the Apple TV. Its absence had previously put Apple\'s set-top box at a disadvantage to Amazon\'s Fire TV line-up. Fire TV owners have reported that trying to watch YouTube clips now prompts an alert warning them that they will lose the functionality on 1 January. I use firestick to watch YouTube primarily and suddenly this message appears today. No #youtube on #FireTV from 1/1/18. Great! pic.twitter.com/Pe53chi4ft End of Twitter post by @eqbalashraf "We\'ve been trying to reach agreement with Amazon to give consumers access to each other\'s products and services," Google said in a statement. "But Amazon doesn\'t carry Google products like Chromecast and Google Home, doesn\'t make Prime Video available for Google Cast users, and last month stopped selling some of Nest\'s latest products. "Given this lack of reciprocity, we are no longer supporting YouTube on Echo Show and FireTV. We hope we can reach an agreement to resolve these issues soon." Google had stopped Amazon\'s Echo Show speakers being able to play YouTube videos in September, on the basis that the retailer had altered the way the software worked. The version Amazon presented had lacked next video recommendations, subscriptions and other features - but these were restored in November, when Amazon made the device present a more normal view of YouTube. But, according to Techcrunch, the search firm believes its rights have still been violated because Amazon continues to overlay its own voice controls. Amazon has responded, saying: "Echo Show and Fire TV now display a standard web view of YouTube.com and point customers directly to YouTube\'s existing website. Google is setting a disappointing precedent by selectively blocking customer access to an open website. We hope to resolve this with Google as soon as possible." The dispute disadvantages consumers in two ways. Users will be unable to access a service that Amazon\'s devices had promised to deliver. And Amazon\'s refusal to even allow third-parties to sell certain Google products via its site makes it harder to find them at their lowest price. "It\'s a surprising turn of events in both respects," commented Ben Wood from the CCS Insight tech consultancy. "YouTube is all about maximising the number of people who see its content, and Amazon wants to be the so-called \'everything store\'It\'s all very unfortunate for consumers, who will have little understanding of the commercial tensions between the two companies. "I wonder whether the next step might be the intervention of a regulator to investigate whether they are behaving anti-competitively.')

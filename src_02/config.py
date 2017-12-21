@@ -15,4 +15,9 @@ mac_path = r'E:\Repositories\ML--Native-Bayes\material'
 mac_test_path = r'E:\Repositories\ML--Native-Bayes\test'
 # mac_test_path = r'/Users/lch/Desktop/pycharm/Bayes/test'
 
+# eng
 dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology']
+categories = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology']
+
+# tf-idf阈值
+threshold = 0.02

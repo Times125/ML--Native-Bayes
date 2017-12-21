@@ -8,7 +8,7 @@
 """
 from export_data import build_features_lib
 from openpyxl import load_workbook
-from file_path_constant import *
+from config import *
 import codecs
 import re
 import time
@@ -25,11 +25,9 @@ def import_data_from_excel():
     start_time = time.time()
     log_info = {}
     for dir_name in dirs:
-        path = os.path.join(mac_test_path, dir_name)
-        wb = load_workbook(os.path.join(path, dir_name + r'.xlsx'))
+        wb = load_workbook(os.path.join(mac_test_path, dir_name + r'.xlsx'))
         print wb.sheetnames
         sheet = wb.get_sheet_by_name("sheet1")
-
         tmp_path = os.path.join(mac_path, dir_name)
         a = 0
         for row in sheet['A']:
@@ -62,7 +60,7 @@ def import_features_from_lib():
             txt = reader.read().decode('ISO-8859-15').encode('utf-8')
             txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符
             lst = txt.split(' ')
-            print dir_name, "特征包含共%d个词" % len(lst)
+            print dir_name, u"特征包含共%d个词" % len(lst)
             all_features_words = all_features_words | set(lst)
             features.append((lst, dir_name))  # [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
     return features, all_features_words

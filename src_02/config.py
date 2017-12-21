@@ -9,17 +9,17 @@
 __author__ = 'lch02'
 
 # 模型存储位置
-model_path = r'E:\Repositories\ML--Native-Bayes\model'
-
-feature_path = r'E:\Repositories\ML--Native-Bayes\features'
-# eng_f_path = r'/Users/lch/Desktop/pycharm/Bayes/features'
-material_path = r'E:\Repositories\ML--Native-Bayes\material'
-# eng_m_path = r'/Users/lch/Desktop/pycharm/Bayes/material'
-test_path = r'E:\Repositories\ML--Native-Bayes\test'
-# eng_test_path = r'/Users/lch/Desktop/pycharm/Bayes/test'
+# model_path = r'E:\Repositories\ML--Native-Bayes\model'
+model_path = r'/Users/lch/Desktop/pycharm/ML--Native-Bayes/model'
+# feature_path = r'E:\Repositories\ML--Native-Bayes\features'
+feature_path = r'/Users/lch/Desktop/pycharm/ML--Native-Bayes/features'
+# material_path = r'E:\Repositories\ML--Native-Bayes\material'
+material_path = r'/Users/lch/Desktop/pycharm/ML--Native-Bayes/material'
+# test_path = r'E:\Repositories\ML--Native-Bayes\test'
+test_path = r'/Users/lch/Desktop/pycharm/ML--Native-Bayes/test'
 
 # tf-idf阈值
-threshold = 0.02
+threshold = 0.015
 
 dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology', 'social_fr', 'political_fr', 'international_fr', 'economy_fr']
 categories = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology', 'social_fr', 'political_fr', 'international_fr', 'economy_fr']

@@ -42,14 +42,14 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     classifier = nltk.classify.NaiveBayesClassifier.train(j_train_data)
     print 'j_test_accuracy is %.7f' % nltk.classify.accuracy(classifier, j_test_data)
 
-    """
     print len(train_data), '--', len(test_data)
     print len(train_set), '--', len(test_set)
+    uncorrected = 0
     for it in test_data:
         res = classifier.classify(it[0])
         if not (it[1] == res):
-            print it[1]
-    """
+            uncorrected += 1
+    print 'test_accuracy is %.7f' % uncorrected
 
     f = open(os.path.join(model_path, 'my_classifier_pickle'), 'wb')
     pickle.dump(classifier, f)

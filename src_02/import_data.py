@@ -32,7 +32,10 @@ def import_data_from_excel():
         for row in sheet['A']:
             file_name = os.path.join(tmp_path, str(a) + r'.txt')
             txt = str(row.value).decode('ISO-8859-15').encode('utf-8')
-            txt = re.sub(r'[^\x00-\xFF]+', '', txt)  # 去除所有非英法字符
+            if dir_name not in fr_categories:
+                txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非英语字符
+            else:
+                txt = re.sub(r'[^\x00-\xFF]+', '', txt)  # 去除所有非法语字符
             if not txt or len(txt) <= 150:  # 舍弃过短的文章
                 continue
             with codecs.open(file_name, 'wb', 'utf-8', errors='ignore') as writer:
@@ -55,7 +58,7 @@ def import_features_from_lib():
         file_name = os.path.join(feature_path, dir_name + '.txt')
         with codecs.open(file_name, 'rb') as reader:
             txt = reader.read().decode('ISO-8859-15').encode('utf-8')
-            txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非ASCII字符
+            txt = re.sub(r'[^\x00-\xFF]+', '', txt)  # 去除所有非ASCII字符
             lst = txt.split(' ')
             print dir_name, u"特征包含共%d个词" % len(lst)
             all_features_words = all_features_words | set(lst)

@@ -11,6 +11,10 @@ import time
 import sys
 import os
 import codecs
+
+import re
+from openpyxl import load_workbook
+
 from config import *
 from nltk_bayes_classifier import import_features_from_lib, get_model
 from nltk_bayes_classifier import import_data_from_excel, train_native_bayes_classifier
@@ -45,12 +49,13 @@ def main():
             train()
             sys.exit('auto successfully')
         if opt in ('-c', '--classify'):
-            res = classify_text(' '.join(args))
+            classifier = get_model()
+            res = classify_text(' '.join(args), classifier)
             sys.exit(res)
 
 
-def classify_text(txt):
-    classifier = get_model()
+def classify_text(txt, classifier):
+
     features, all_words = import_features_from_lib()
     res_word_list, v = text_parse(txt)
     wait_for_class = {}
@@ -121,6 +126,12 @@ def check_dirs():
     f_path = os.path.join(feature_path)
     t_path = os.path.join(test_path)
     mod_path = os.path.join(model_path)
+
+    for dir_name in verifies:
+        v_path = os.path.join(verify_path, dir_name)
+        if not os.path.exists(v_path):
+            os.makedirs(v_path)
+
     if not os.path.exists(mod_path):
         os.makedirs(mod_path)
 
@@ -180,16 +191,50 @@ def tests():
            u'contains(billboard)': False, u'contains(hawk)': False, u'contains(lump)': False,
            u'contains(heartbreak)': False, u'contains(battler)': False, u'contains(bauman)': False,
            u'contains(smile)': False, u'contains(mandolin)': False, u'contains(spanish-speaking)': False}
-    cla = get_model()
-    print cla.classify(cul)
+    classifier = get_model()
+    for dir_name in verifies:
+        wb = load_workbook(os.path.join(verify_path, dir_name + r'.xlsx'))
+        sheet = wb.get_sheet_by_name("sheet1")
+        tmp_path = os.path.join(verify_path, dir_name)
+        a = 0
+        for row in sheet['A']:
+            file_name = os.path.join(tmp_path, str(a) + r'.txt')
+            txt = str(row.value).decode('ISO-8859-15').encode('utf-8')
+            if dir_name not in fr_categories:
+                txt = re.sub(r'[^\x00-\x7F]+', '', txt)  # 去除所有非英语字符
+            else:
+                txt = re.sub(r'[^\x00-\xFF]+', '', txt)  # 去除所有非法语字符
+            if not txt or len(txt) <= 150:  # 舍弃过短的文章
+                continue
+            with codecs.open(file_name, 'wb', 'utf-8', errors='ignore') as writer:
+                writer.write(txt)
+                a += 1
+    total_num = 0
+    uncorrected = 0
+    for dir_name in verifies:
+        file_path = os.path.join(verify_path, dir_name)
+        file_num = len(os.listdir(file_path))
+        total_num += file_num
+        b = 0
+        for i in range(file_num):
+            fn = os.path.join(file_path, str(b) + r'.txt')
+            with codecs.open(fn, 'rb', 'utf-8') as reader:
+                txt = reader.read().decode('utf-8')
+            res = classify_text(txt, classifier)
+            if res != dir_name:
+                uncorrected += 1
+                print dir_name, ":", b, '.txt'
+            b += 1
+    print 'accuracy is : %.5f' % (uncorrected / float(total_num))
 
 
 if __name__ == '__main__':
     check_dirs()
     # main()  # 运行程序
-    # import_data_from_excel()
+    import_data_from_excel()
     build_features_lib()
     train()
+    tests()
     # inter
     #classify_text(u'Le chasseur de 1ere claisse Albéric Riveta est décédé dans la nuit du 17 au 18 juin près de Gao, au Mali Le soldat français faisait partie du 1er régiment de chasseurs parachutistes de Pamiers (Ariège).  L\'Elysée a annoncé, dimanche soir, dans un communiqué, «la mort accidentelle», la nuit précédente, d\'un soldat français, Albéric Riveta, «lors d\'une opération aéroportée» au Mali. La présidence s\'est refusée à donner toute précision sur les circonstances de ce décès.    «Le président de la République a appris avec tristesse la mort accidentelle la nuit dernière au Mali d\'un soldat du 1er régiment de chasseurs parachutistes de Pamiers (Ariège) lors d\'une opération aéroportée effectuée dans la région d\'Almoustarat», au nord de Gao, a déclaré la présidence. Au cours de cette opération, d\'autres soldats ont été blessés.    Dans un communiqué, la ministre des Armées, Sylvie Goulard, déclare avoir appris «avec tristesse et émotion la mort accidentelle en opération au Mali, dans la nuit du 17 au 18 juin 2017, du chasseur parachutiste de 1ère classe Albéric Riveta». Elle «rend hommage à ce parachutiste tombé pour la France dans l’accomplissement de sa mission et assure sa famille et ses frères d’armes de son plein soutien dans cette douloureuse épreuve», poursuit le communiqué.      Emmanuel Macron a «exprimé sa confiance et sa fierté aux militaires français qui combattent avec courage les groupes armés terroristes au Sahel» et «réitéré le soutien de la France au Mali et à la force des Nations Unies pour la mise en oeuvre de l\'accord de paix», a déclaré l\'Elysée dans son communiqué. Environ 4 000 hommes sont déployés au Mali et dans d\'autres pays d\'Afrique dans le cadre de l\'opération Barkhane.     Le chef de l\'Etat a également salué «la mémoire de ce militaire français tué dans l\'accomplissement de sa mission pour la défense de notre pays et la protection de nos concitoyens» et adressé «ses sincères condoléances à sa famille, ses amis et ses frères d\'armes», toujours selon la présidence.   Cinq soldats maliens ont encore été tués samedi et huit blessés dans l\'attaque d\'un camp militaire dans le nord du Mali. Ce décès porte à 18 le nombre de soldats français tué depuis le début des opérations au Mali en janvier 2013.')
     # tec

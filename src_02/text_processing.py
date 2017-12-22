@@ -204,15 +204,13 @@ def get_class_features():
     pool.close()  # 关闭子进程
     pool.join()  # 等待进程同步
     print 'size------', qp.empty()
-    a = 0
     while not qp.empty():
         res = qp.get(True)
         post_list.extend(res[0])
         total_vocab_set = total_vocab_set | res[1]
         m_categories.extend(res[2])
-        print a
-        a
     t_time_end = time.time()
+
     print u'进程耗时%.4f 秒' % (t_time_end - t_time) # 453秒
     print u'文本去除停用词、词形还原后还剩余', len(list(total_vocab_set)), u'个不重复单词。'
     docs_features = get_doc_features(post_list, total_vocab_set, threshold)  # 获得每篇文档的特征[[],[],..,[]]
@@ -279,10 +277,10 @@ def deal_doc(n_list, category, qp):
     p_vocab_set = set([])
     print 'sub process ID %d' % os.getpid()
     for per_doc in n_list:
-        res_word_list = []
-        doc_set = set([])
         if category in fr_categories:
             res_word_list, doc_set = text_parse(per_doc[0], 'fr')
+        else:
+            res_word_list, doc_set = text_parse(per_doc[0])
         p_list.append(res_word_list)
         p_vocab_set = p_vocab_set | doc_set
         p_categories.append(category)
@@ -297,7 +295,7 @@ def read_file(path_name, category, queue):
     path_dir = os.listdir(path_name)
     files_num = len(path_dir)
     content_list = []
-    for fn in range(files_num/40):
+    for fn in range(files_num/2):
         file_name = os.path.join(path_name, r'%d.txt' % fn)
         with codecs.open(file_name, 'rb', 'utf-8') as reader:
             txt = reader.read().decode('utf-8')

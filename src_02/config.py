@@ -17,6 +17,7 @@ material_path = r'E:\Repositories\ML--Native-Bayes\material'
 # eng_m_path = r'/Users/lch/Desktop/pycharm/Bayes/material'
 test_path = r'E:\Repositories\ML--Native-Bayes\test'
 # eng_test_path = r'/Users/lch/Desktop/pycharm/Bayes/test'
+verify_path = r'E:\Repositories\ML--Native-Bayes\verify'
 
 # tf-idf阈值
 threshold = 0.02
@@ -24,6 +25,8 @@ threshold = 0.02
 dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology', 'social_fr', 'political_fr', 'international_fr', 'economy_fr']
 categories = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology', 'social_fr', 'political_fr', 'international_fr', 'economy_fr']
 fr_categories = ['social_fr', 'political_fr', 'international_fr', 'economy_fr']
+
+verifies = ['latest_cul', 'latest_eco', 'latest_ene', 'latest_env', 'latest_pop', 'latest_tec']
 
 '''
 # 法语

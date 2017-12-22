@@ -60,7 +60,7 @@ def import_features_from_lib():
             txt = reader.read().decode('ISO-8859-15').encode('utf-8')
             txt = re.sub(r'[^\x00-\xFF]+', '', txt)  # 去除所有非ASCII字符
             lst = txt.split(' ')
-            print dir_name, u"特征包含共%d个词" % len(lst)
+            # print dir_name, u"特征包含共%d个词" % len(lst)
             all_features_words = all_features_words | set(lst)
             features.append((lst, dir_name))  # [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
     return features, all_features_words

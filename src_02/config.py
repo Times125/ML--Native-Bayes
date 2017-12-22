@@ -26,7 +26,7 @@ dirs = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 
 categories = ['culture', 'economy', 'energy', 'environment', 'political', 'security', 'technology', 'social_fr', 'political_fr', 'international_fr', 'economy_fr']
 fr_categories = ['social_fr', 'political_fr', 'international_fr', 'economy_fr']
 
-verifies = ['latest_cul', 'latest_eco', 'latest_ene', 'latest_env', 'latest_pol', 'latest_tec']
+verifies = ['culture', 'economy', 'energy', 'environment', 'political', 'technology']
 
 '''
 # 法语

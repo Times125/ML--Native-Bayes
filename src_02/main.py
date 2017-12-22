@@ -51,11 +51,11 @@ def main():
         if opt in ('-c', '--classify'):
             classifier = get_model()
             features, all_words = import_features_from_lib()
-            res = classify_text(' '.join(args), classifier,features,all_words)
+            res = classify_text(' '.join(args), classifier, features, all_words)
             sys.exit(res)
 
 
-def classify_text(txt, classifier,features,all_words):
+def classify_text(txt, classifier, features, all_words):
 
     # features, all_words = import_features_from_lib()
     res_word_list, v = text_parse(txt)
@@ -223,20 +223,22 @@ def tests():
             with codecs.open(fn, 'rb', 'utf-8') as reader:
                 txt = reader.read().decode('utf-8')
             res = classify_text(txt, classifier, features, all_words)
+            print res, '<----------------> ', dir_name
             if res != dir_name:
                 uncorrected += 1
                 print dir_name, ":", b, '.txt'
             b += 1
-    print 'accuracy is : %.5f' % (uncorrected / float(total_num))
+    print total_num, '  ', uncorrected
+    print 'accuracy is : %.5f' % (1 - (uncorrected / float(total_num)))
 
 
 if __name__ == '__main__':
     check_dirs()
-    # main()  # 运行程序
+    main()  # 运行程序
     #import_data_from_excel()
     #build_features_lib()
     #train()
-    tests()
+    # tests()
     # inter
     #classify_text(u'Le chasseur de 1ere claisse Albéric Riveta est décédé dans la nuit du 17 au 18 juin près de Gao, au Mali Le soldat français faisait partie du 1er régiment de chasseurs parachutistes de Pamiers (Ariège).  L\'Elysée a annoncé, dimanche soir, dans un communiqué, «la mort accidentelle», la nuit précédente, d\'un soldat français, Albéric Riveta, «lors d\'une opération aéroportée» au Mali. La présidence s\'est refusée à donner toute précision sur les circonstances de ce décès.    «Le président de la République a appris avec tristesse la mort accidentelle la nuit dernière au Mali d\'un soldat du 1er régiment de chasseurs parachutistes de Pamiers (Ariège) lors d\'une opération aéroportée effectuée dans la région d\'Almoustarat», au nord de Gao, a déclaré la présidence. Au cours de cette opération, d\'autres soldats ont été blessés.    Dans un communiqué, la ministre des Armées, Sylvie Goulard, déclare avoir appris «avec tristesse et émotion la mort accidentelle en opération au Mali, dans la nuit du 17 au 18 juin 2017, du chasseur parachutiste de 1ère classe Albéric Riveta». Elle «rend hommage à ce parachutiste tombé pour la France dans l’accomplissement de sa mission et assure sa famille et ses frères d’armes de son plein soutien dans cette douloureuse épreuve», poursuit le communiqué.      Emmanuel Macron a «exprimé sa confiance et sa fierté aux militaires français qui combattent avec courage les groupes armés terroristes au Sahel» et «réitéré le soutien de la France au Mali et à la force des Nations Unies pour la mise en oeuvre de l\'accord de paix», a déclaré l\'Elysée dans son communiqué. Environ 4 000 hommes sont déployés au Mali et dans d\'autres pays d\'Afrique dans le cadre de l\'opération Barkhane.     Le chef de l\'Etat a également salué «la mémoire de ce militaire français tué dans l\'accomplissement de sa mission pour la défense de notre pays et la protection de nos concitoyens» et adressé «ses sincères condoléances à sa famille, ses amis et ses frères d\'armes», toujours selon la présidence.   Cinq soldats maliens ont encore été tués samedi et huit blessés dans l\'attaque d\'un camp militaire dans le nord du Mali. Ce décès porte à 18 le nombre de soldats français tué depuis le début des opérations au Mali en janvier 2013.')
     # tec

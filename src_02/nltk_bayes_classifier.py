@@ -49,7 +49,7 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
         res = classifier.classify(it[0])
         if not (it[1] == res):
             uncorrected += 1
-    print 'test_accuracy is %.7f' % uncorrected
+    print 'test_accuracy is %.7f' % (uncorrected / len(test_data))
 
     f = open(os.path.join(model_path, 'my_classifier_pickle'), 'wb')
     pickle.dump(classifier, f)

@@ -11,10 +11,8 @@ import time
 import sys
 import os
 import codecs
-
 import re
 from openpyxl import load_workbook
-
 from config import *
 from nltk_bayes_classifier import import_features_from_lib, get_model
 from nltk_bayes_classifier import import_data_from_excel, train_native_bayes_classifier
@@ -72,7 +70,8 @@ def usage():
     print(u'2) 从Excel 里导入数据:[python main.py -e]\n')
     print(u'3) 建立特征库:[python main.py -l]\n')
     print(u'4) 训练模型:[python main.py -t]\n')
-    print(u'5) 输入一篇文章进行分类:[python main.py -c: \"hello word!\"] 或者 [python main.py --classify= \"hello word!\"]\n')
+    print(u'5) 一键完成2-4:[python main.py -a]\n')
+    print(u'6) 输入一篇文章进行分类:[python main.py -c: \"hello word!\"] 或者 [python main.py --classify= \"hello word!\"]\n')
 
 def train():
     start_time = time.time()

@@ -12,6 +12,7 @@ import sys
 import os
 import codecs
 import re
+import socket
 from openpyxl import load_workbook
 from config import *
 from nltk_bayes_classifier import import_features_from_lib, get_model
@@ -21,37 +22,54 @@ from text_processing import text_parse
 from multiprocessing import Pool, Manager,Queue
 
 
+
 __author__ = 'Lich'
 
 
 def main():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'heltac:', ['classify=', 'help', 'excel', 'train', 'lib', 'auto'])
-    except getopt.GetoptError:
-        sys.exit(-1)
-    for opt, value in opts:
-        if opt in ('-h', '--help'):
-            usage()
-        if opt in ('-e', '--excel'):
-            import_data_from_excel()
-            sys.exit('import successfully')
-        if opt in ('-l', '--lib'):
-            build_features_lib()
-            sys.exit('build successfully')
-        if opt in ('-t', '--train'):
-            train()
-            sys.exit('train successful')
-        if opt in ('-a', '--auto'):
+    classifier = get_model()
+    features, all_words = import_features_from_lib()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('127.0.0.1', 9898))
+    s.listen(10)
+    while True:
+        sock, addr = s.accept()
+        data = sock.recv(102400)
+        data = data.decode('utf-8').encode('utf-8')
+        if data is 'auto':
             import_data_from_excel()
             build_features_lib()
             train()
-            sys.exit('auto successfully')
-        if opt in ('-c', '--classify'):
-            classifier = get_model()
-            features, all_words = import_features_from_lib()
-            res = classify_text(' '.join(args), classifier, features, all_words)
-            sys.exit(res)
-
+            sock.send("complete auto!")
+            continue
+        res = classify_text(data, classifier, features, all_words)
+        sock.send(res)
+        """
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], 'heltac:', ['classify=', 'help', 'excel', 'train', 'lib', 'auto'])
+        except getopt.GetoptError:
+            sys.exit(-1)
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                usage()
+            if opt in ('-e', '--excel'):
+                import_data_from_excel()
+                sys.exit('import successfully')
+            if opt in ('-l', '--lib'):
+                build_features_lib()
+                sys.exit('build successfully')
+            if opt in ('-t', '--train'):
+                train()
+                sys.exit('train successful')
+            if opt in ('-a', '--auto'):
+                import_data_from_excel()
+                build_features_lib()
+                train()
+                sys.exit('auto successfully')
+            if opt in ('-c', '--classify'):
+                res = classify_text(' '.join(args), classifier, features, all_words)
+                sys.exit(res)
+            """
 
 def classify_text(txt, classifier, features, all_words):
 

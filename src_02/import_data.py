@@ -11,6 +11,7 @@ from openpyxl import load_workbook
 from config import *
 import codecs
 import re
+import pickle
 import time
 import os
 import sys
@@ -63,4 +64,8 @@ def import_features_from_lib():
             # print dir_name, u"特征包含共%d个词" % len(lst)
             all_features_words = all_features_words | set(lst)
             features.append((lst, dir_name))  # [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
+    with open(os.path.join(model_path, 'all_words.pkl'), 'wb') as f:
+        pickle.dump(all_features_words, f)
+    with open(os.path.join(model_path, 'features.pkl'), 'wb') as f:
+        pickle.dump(features, f)
     return features, all_features_words

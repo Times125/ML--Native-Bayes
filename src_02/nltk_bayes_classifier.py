@@ -7,9 +7,9 @@
 @Description: 
 """
 import nltk
-import pickle
 import random
 from import_data import *
+from sklearn.naive_bayes import BernoulliNB
 __author__ = 'Lich'
 
 '''
@@ -29,8 +29,12 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
 
     train_data = [(doc_features(doc, category), category) for (doc, category) in train_set]
     test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
+
     classifier = nltk.classify.NaiveBayesClassifier.train(train_data)
     print 'test_accuracy is %.7f' % nltk.classify.accuracy(classifier, test_data)
+
+    # bernoulli_classifier = nltk.SklearnClassifier(BernoulliNB()).train(train_data)
+    # print nltk.classify.accuracy(bernoulli_classifier, test_data), "BernoulliNB()"
 
     # 交叉验证
     aft = int(round(lst_sum * 0.2))
@@ -41,28 +45,21 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     j_test_data = [(doc_features(doc, category), category) for (doc, category) in j_test_set]
     classifier = nltk.classify.NaiveBayesClassifier.train(j_train_data)
     print 'j_test_accuracy is %.7f' % nltk.classify.accuracy(classifier, j_test_data)
-
+    """
     print len(train_data), '--', len(test_data)
     print len(train_set), '--', len(test_set)
-    uncorrected = 0
-    for it in test_data:
-        res = classifier.classify(it[0])
-        if not (it[1] == res):
-            uncorrected += 1
-    print 'test_accuracy is %.7f' % (uncorrected / len(test_data))
+    """
+    with open(os.path.join(model_path, 'nb_classifier.pkl'), 'wb') as f:
+        pickle.dump(classifier, f)
 
-    f = open(os.path.join(model_path, 'my_classifier_pickle'), 'wb')
-    pickle.dump(classifier, f)
-    f.close()
 
 '''
 获取保存的模型
 '''
 def get_model():
-    f = open(os.path.join(model_path, 'my_classifier_pickle'), 'rb')
-    classifier = pickle.load(f)
-    f.close()
-    return classifier
+    with open(os.path.join(model_path, 'nb_classifier.pkl'), 'rb') as f:
+        nb_classifier = pickle.load(f)
+    return nb_classifier
 
 
 '''

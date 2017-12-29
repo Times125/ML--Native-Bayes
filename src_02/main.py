@@ -13,6 +13,7 @@ import os
 import codecs
 import re
 import socket
+import pickle
 from openpyxl import load_workbook
 from config import *
 from nltk_bayes_classifier import import_features_from_lib, get_model
@@ -21,14 +22,13 @@ from export_data import build_features_lib
 from text_processing import text_parse
 from multiprocessing import Pool, Manager,Queue
 
-
-
 __author__ = 'Lich'
 
 
 def main():
     classifier = get_model()
-    features, all_words = import_features_from_lib()
+    with open(os.path.join(model_path, 'all_words.pkl'), 'rb') as f:
+        all_words = pickle.load(f)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('127.0.0.1', 9898))
     s.listen(10)
@@ -39,41 +39,15 @@ def main():
         if data is 'auto':
             import_data_from_excel()
             build_features_lib()
+            import_features_from_lib()  # 这是自己建立的语料库
             train()
             sock.send("complete auto!")
             continue
-        res = classify_text(data, classifier, features, all_words)
+        res = classify_text(data, classifier, all_words)
         sock.send(res)
-        """
-        try:
-            opts, args = getopt.getopt(sys.argv[1:], 'heltac:', ['classify=', 'help', 'excel', 'train', 'lib', 'auto'])
-        except getopt.GetoptError:
-            sys.exit(-1)
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                usage()
-            if opt in ('-e', '--excel'):
-                import_data_from_excel()
-                sys.exit('import successfully')
-            if opt in ('-l', '--lib'):
-                build_features_lib()
-                sys.exit('build successfully')
-            if opt in ('-t', '--train'):
-                train()
-                sys.exit('train successful')
-            if opt in ('-a', '--auto'):
-                import_data_from_excel()
-                build_features_lib()
-                train()
-                sys.exit('auto successfully')
-            if opt in ('-c', '--classify'):
-                res = classify_text(' '.join(args), classifier, features, all_words)
-                sys.exit(res)
-            """
 
-def classify_text(txt, classifier, features, all_words):
 
-    # features, all_words = import_features_from_lib()
+def classify_text(txt, classifier, all_words):
     res_word_list, v = text_parse(txt)
     wait_for_class = {}
     for item in res_word_list:
@@ -81,19 +55,11 @@ def classify_text(txt, classifier, features, all_words):
     res = classifier.classify(wait_for_class)
     return res
 
-def usage():
-    print (u'所有命令参数 -e: 从Excel 里导入数据 -l: 建立特征库 -t: 训练模型 -c: 输入一篇文章进行分类\n')
-    print(u'如何使用？请看示例:\n')
-    print(u'1) 查看帮助：[python main.py -h] 或者 [python main.py --help]\n')
-    print(u'2) 从Excel 里导入数据:[python main.py -e]\n')
-    print(u'3) 建立特征库:[python main.py -l]\n')
-    print(u'4) 训练模型:[python main.py -t]\n')
-    print(u'5) 一键完成2-4:[python main.py -a]\n')
-    print(u'6) 输入一篇文章进行分类:[python main.py -c: \"hello word!\"] 或者 [python main.py --classify= \"hello word!\"]\n')
 
 def train():
     start_time = time.time()
-    features, all_words = import_features_from_lib()  # 这是自己建立的语料库
+    with open(os.path.join(model_path, 'features.pkl'), 'rb') as f:
+        features = pickle.load(f)
     mid_time2 = time.time()
     vocab_set = set([])
     post_list = []
@@ -101,6 +67,7 @@ def train():
     man = Manager()
     queue_pool = man.Queue()
     pool_t = Pool(len(dirs))  # 开n个进程
+
     print 'Parent process ID %d' % os.getpid()
     for dir_name in dirs:
         pool_t.apply_async(deal_train_doc, (dir_name, queue_pool,))
@@ -163,55 +130,10 @@ def check_dirs():
             os.makedirs(t_path)
 
 def tests():
-    train = [({'a': 1, 'b': 0, 'c': 1}, 'y'),
-             ({'a': 1, 'b': 0, 'c': 0}, 'y'),
-             ({'a': 1, 'b': 1, 'c': 1}, 'x'),
-             ({'a': 1, 'b': 1, 'c': 0}, 'x'),
-             ({'a': 1, 'b': 1, 'c': 1}, 'x'),
-             ({'a': 0, 'b': 0, 'c': 1}, 'y')]
-    test = [({'a': 1, 'b': 0, 'c': 1}, 'y'),
-            ({'a': 0, 'b': 0, 'c': 1}, 'y'),
-            ({'a': 1, 'b': 0, 'c': 0}, 'y'),
-            ({'a': 1, 'b': 1, 'c': 0}, 'x'),
-            ({'a': 1, 'b': 1, 'c': 1}, 'x')]
-    testp = [({'a': 1, 'b': 0, 'c': 1}),
-             ({'a': 0, 'b': 0, 'c': 1}),
-             ({'a': 1, 'b': 0, 'c': 0}),
-             ({'a': 1, 'b': 1, 'c': 0}),
-             ({'a': 1, 'b': 1, 'c': 1})]
-    cul = {u'contains(monoxide)': False, u'contains(alec)': False, u'contains(ambitious)': False,
-           u'contains(writes)': True, u'contains(fate)': False, u'contains(voorhees)': False,
-           u'contains(blazing)': False, u'contains(warmth)': False, u'contains(d-day)': False,
-           u'contains(handful)': False, u'contains(boo)': False, u'contains(obstacle)': False,
-           u'contains(teenager)': False, u'contains(minority)': False, u'contains(protect)': True,
-           u'contains(key)': False, u'contains(led)': True, u'contains(explained)': False, u'contains(nasty)': False,
-           u'contains(sporting)': False, u'contains(dwells)': False, u'contains(jones)': False,
-           u'contains(pack)': False, u'contains(claim)': False, u'contains(tuition)': False, u'contains(clean)': False,
-           u'contains(underline)': False, u'contains(bringing)': True, u'contains(wise)': False,
-           u'contains(vietnam)': False, u'contains(broadening)': False, u'contains(resentment)': False,
-           u'contains(fed)': False, u'contains(confidant)': False, u'contains(andy)': False,
-           u'contains(doisneau)': False, u'contains(wild)': True, u'contains(eco-warrior)': False,
-           u'contains(democrat)': False, u'contains(wilson)': False, u'contains(surface)': False,
-           u'contains(pity)': False, u'contains(ranked)': False, u'contains(mount)': False, u'contains(slang)': False,
-           u'contains(taking)': True, u'contains(giles)': False, u'contains(columnist)': False,
-           u'contains(russell)': False, u'contains(warrant)': False, u'contains(mellowed)': False,
-           u'contains(mounting)': False, u'contains(certain)': False, u'contains(arriving)': False,
-           u'contains(shelf)': False, u'contains(stage-play)': False, u'contains(grave)': False,
-           u'contains(die)': False, u'contains(magnificent)': False, u'contains(possessive)': False,
-           u'contains(savaging)': False, u'contains(share)': False, u'contains(settlement)': False,
-           u'contains(fossil)': False, u'contains(meet)': False, u'contains(dent)': False,
-           u'contains(gallantry)': False, u'contains(statement)': False, u'contains(bass)': False,
-           u'contains(wardrobe)': False, u'contains(bloomsbury)': True, u'contains(marriage)': True,
-           u'contains(ewht)': False, u'contains(sisterhood)': False, u'contains(flower)': False,
-           u'contains(time-straddling)': False, u'contains(dog)': False, u'contains(subscriber)': False,
-           u'contains(leave)': False, u'contains(stripe)': False, u'contains(medium)': False, u'contains(good)': False,
-           u'contains(live)': False, u'contains(unlikely)': False, u'contains(b-movie)': False,
-           u'contains(billboard)': False, u'contains(hawk)': False, u'contains(lump)': False,
-           u'contains(heartbreak)': False, u'contains(battler)': False, u'contains(bauman)': False,
-           u'contains(smile)': False, u'contains(mandolin)': False, u'contains(spanish-speaking)': False}
     classifier = get_model()
+    with open(os.path.join(model_path, 'all_words.pkl'), 'rb') as f:
+        all_words = pickle.load(f)
     for dir_name in verifies:
-        features, all_words = import_features_from_lib()
         wb = load_workbook(os.path.join(verify_path, dir_name + r'.xlsx'))
         sheet = wb.get_sheet_by_name("sheet1")
         tmp_path = os.path.join(verify_path, dir_name)
@@ -239,22 +161,23 @@ def tests():
             fn = os.path.join(file_path, str(b) + r'.txt')
             with codecs.open(fn, 'rb', 'utf-8') as reader:
                 txt = reader.read().decode('utf-8')
-            res = classify_text(txt, classifier, features, all_words)
+            res = classify_text(txt, classifier, all_words)
             print res, '<----------------> ', dir_name
             if res != dir_name:
                 uncorrected += 1
                 print dir_name, ":", b, '.txt'
             b += 1
     print total_num, '  ', uncorrected
-    print 'accuracy is : %.5f' % (1 - (uncorrected / float(total_num)))
+    print 'nb_classifier accuracy is : %.5f' % (1 - (uncorrected / float(total_num)))
 
 
 if __name__ == '__main__':
     check_dirs()
     main()  # 运行程序
-    #import_data_from_excel()
-    #build_features_lib()
-    #train()
+    # import_data_from_excel()
+    # build_features_lib()
+    # import_features_from_lib()
+    # train()
     # tests()
     # inter
     #classify_text(u'Le chasseur de 1ere claisse Albéric Riveta est décédé dans la nuit du 17 au 18 juin près de Gao, au Mali Le soldat français faisait partie du 1er régiment de chasseurs parachutistes de Pamiers (Ariège).  L\'Elysée a annoncé, dimanche soir, dans un communiqué, «la mort accidentelle», la nuit précédente, d\'un soldat français, Albéric Riveta, «lors d\'une opération aéroportée» au Mali. La présidence s\'est refusée à donner toute précision sur les circonstances de ce décès.    «Le président de la République a appris avec tristesse la mort accidentelle la nuit dernière au Mali d\'un soldat du 1er régiment de chasseurs parachutistes de Pamiers (Ariège) lors d\'une opération aéroportée effectuée dans la région d\'Almoustarat», au nord de Gao, a déclaré la présidence. Au cours de cette opération, d\'autres soldats ont été blessés.    Dans un communiqué, la ministre des Armées, Sylvie Goulard, déclare avoir appris «avec tristesse et émotion la mort accidentelle en opération au Mali, dans la nuit du 17 au 18 juin 2017, du chasseur parachutiste de 1ère classe Albéric Riveta». Elle «rend hommage à ce parachutiste tombé pour la France dans l’accomplissement de sa mission et assure sa famille et ses frères d’armes de son plein soutien dans cette douloureuse épreuve», poursuit le communiqué.      Emmanuel Macron a «exprimé sa confiance et sa fierté aux militaires français qui combattent avec courage les groupes armés terroristes au Sahel» et «réitéré le soutien de la France au Mali et à la force des Nations Unies pour la mise en oeuvre de l\'accord de paix», a déclaré l\'Elysée dans son communiqué. Environ 4 000 hommes sont déployés au Mali et dans d\'autres pays d\'Afrique dans le cadre de l\'opération Barkhane.     Le chef de l\'Etat a également salué «la mémoire de ce militaire français tué dans l\'accomplissement de sa mission pour la défense de notre pays et la protection de nos concitoyens» et adressé «ses sincères condoléances à sa famille, ses amis et ses frères d\'armes», toujours selon la présidence.   Cinq soldats maliens ont encore été tués samedi et huit blessés dans l\'attaque d\'un camp militaire dans le nord du Mali. Ce décès porte à 18 le nombre de soldats français tué depuis le début des opérations au Mali en janvier 2013.')

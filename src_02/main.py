@@ -162,7 +162,6 @@ def tests():
             with codecs.open(fn, 'rb', 'utf-8') as reader:
                 txt = reader.read().decode('utf-8')
             res = classify_text(txt, classifier, all_words)
-            print res, '<----------------> ', dir_name
             if res != dir_name:
                 uncorrected += 1
                 print dir_name, ":", b, '.txt'

@@ -31,20 +31,20 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
 
     classifier = nltk.classify.NaiveBayesClassifier.train(train_data)
-    testss(classifier) # 0.86826
+    testss(classifier)  # 0.86826
     print 'NB test_accuracy is %.7f' % nltk.classify.accuracy(classifier, test_data) # 1.00
 
     svm_classifier = nltk.SklearnClassifier(LinearSVC()).train(train_data)
-    testss(svm_classifier) # 0.85858
+    testss(svm_classifier)  # 0.85858
     print 'SVM test_accuracy is %.7f' % nltk.classify.accuracy(svm_classifier, test_data) # 0.9869338
 
     # dTree_classifier = nltk.classify.DecisionTreeClassifier.train(train_data)
     # testss(dTree_classifier) # 0.00798
     # print 'DecisionTree test_accuracy is %.7f' % nltk.classify.accuracy(dTree_classifier, test_data)   #0.9939024
 
-    maxent_classifier = nltk.classify.MaxentClassifier.train(train_data)
-    testss(maxent_classifier)
-    print 'MaxentClassifier test_accuracy is %.7f' % nltk.classify.accuracy(maxent_classifier, test_data)
+    # maxent_classifier = nltk.classify.MaxentClassifier.train(train_data)
+    # testss(maxent_classifier) # 0.37325
+    # print 'MaxentClassifier test_accuracy is %.7f' % nltk.classify.accuracy(maxent_classifier, test_data) # 0.0836237
 
     with open(os.path.join(model_path, 'nb_classifier.pkl'), 'wb') as f:
         pickle.dump(classifier, f)

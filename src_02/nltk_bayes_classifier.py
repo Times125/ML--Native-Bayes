@@ -9,7 +9,7 @@
 import nltk
 import random
 from import_data import *
-from sklearn.naive_bayes import BernoulliNB
+from sklearn.svm import LinearSVC
 __author__ = 'Lich'
 
 '''
@@ -31,26 +31,54 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
 
     classifier = nltk.classify.NaiveBayesClassifier.train(train_data)
-    print 'test_accuracy is %.7f' % nltk.classify.accuracy(classifier, test_data)
+    testss(classifier) # 0.86826
+    print 'NB test_accuracy is %.7f' % nltk.classify.accuracy(classifier, test_data) # 1.00
 
-    # bernoulli_classifier = nltk.SklearnClassifier(BernoulliNB()).train(train_data)
-    # print nltk.classify.accuracy(bernoulli_classifier, test_data), "BernoulliNB()"
+    svm_classifier = nltk.SklearnClassifier(LinearSVC()).train(train_data)
+    testss(svm_classifier) # 0.85858
+    print 'SVM test_accuracy is %.7f' % nltk.classify.accuracy(svm_classifier, test_data) # 0.9869338
 
-    # 交叉验证
-    aft = int(round(lst_sum * 0.2))
-    j_train_set = post_list[aft:]  # [('文档所含单词集','类别'),..,('文档所含单词集','类别')]
-    j_test_set = post_list[:aft]
+    # dTree_classifier = nltk.classify.DecisionTreeClassifier.train(train_data)
+    # testss(dTree_classifier) # 0.00798
+    # print 'DecisionTree test_accuracy is %.7f' % nltk.classify.accuracy(dTree_classifier, test_data)   #0.9939024
 
-    j_train_data = [(doc_features(doc, category), category) for (doc, category) in j_train_set]
-    j_test_data = [(doc_features(doc, category), category) for (doc, category) in j_test_set]
-    classifier = nltk.classify.NaiveBayesClassifier.train(j_train_data)
-    print 'j_test_accuracy is %.7f' % nltk.classify.accuracy(classifier, j_test_data)
-    """
-    print len(train_data), '--', len(test_data)
-    print len(train_set), '--', len(test_set)
-    """
+    maxent_classifier = nltk.classify.MaxentClassifier.train(train_data)
+    testss(maxent_classifier)
+    print 'MaxentClassifier test_accuracy is %.7f' % nltk.classify.accuracy(maxent_classifier, test_data)
+
     with open(os.path.join(model_path, 'nb_classifier.pkl'), 'wb') as f:
         pickle.dump(classifier, f)
+
+def testss(classifier):
+    with open(os.path.join(model_path, 'all_words.pkl'), 'rb') as f:
+        all_words = pickle.load(f)
+    total_num = 0
+    uncorrected = 0
+    for dir_name in verifies:
+        file_path = os.path.join(verify_path, dir_name)
+        file_num = len(os.listdir(file_path))
+        total_num += file_num
+        b = 0
+        for i in range(file_num):
+            fn = os.path.join(file_path, str(b) + r'.txt')
+            with codecs.open(fn, 'rb', 'utf-8') as reader:
+                txt = reader.read().decode('utf-8')
+            res = classify_text(txt, classifier, all_words)
+            if res != dir_name:
+                uncorrected += 1
+                print dir_name, ":", b, '.txt'
+            b += 1
+    print total_num, '  ', uncorrected
+    print 'accuracy is : %.5f' % (1 - (uncorrected / float(total_num)))
+
+def classify_text(txt, classifier, all_words):
+    from text_processing import text_parse
+    res_word_list, v = text_parse(txt)
+    wait_for_class = {}
+    for item in res_word_list:
+        wait_for_class['contains(%s)' % item] = (item in all_words)
+    res = classifier.classify(wait_for_class)
+    return res
 
 
 '''

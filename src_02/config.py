@@ -6,18 +6,20 @@
 @Time:  2017/12/15 14:40
 @Description: 
 """
+import os
+
 __author__ = 'lch02'
 
 # 模型存储位置
-model_path = r'E:\Repositories\ML--Native-Bayes\model'
+model_path = os.path.join(os.path.abspath('..'), 'model')
 
-feature_path = r'E:\Repositories\ML--Native-Bayes\features'
+feature_path = os.path.join(os.path.abspath('..'), 'features')
 # eng_f_path = r'/Users/lch/Desktop/pycharm/Bayes/features'
-material_path = r'E:\Repositories\ML--Native-Bayes\material'
+material_path =  os.path.join(os.path.abspath('..'), 'material')
 # eng_m_path = r'/Users/lch/Desktop/pycharm/Bayes/material'
-test_path = r'E:\Repositories\ML--Native-Bayes\test'
+test_path =  os.path.join(os.path.abspath('..'), 'test')
 # eng_test_path = r'/Users/lch/Desktop/pycharm/Bayes/test'
-verify_path = r'E:\Repositories\ML--Native-Bayes\verify'
+verify_path = os.path.join(os.path.abspath('..'), 'verify')
 
 # tf-idf阈值
 threshold = 0.02

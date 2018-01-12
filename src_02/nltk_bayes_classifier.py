@@ -18,6 +18,7 @@ __author__ = 'Lich'
 train_set = []
 test_set = []
 
+
 def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     global word_features
     word_features = m_features   # [(lst1,cat1),(lst2,cat2),...,(lst7,cat7)]
@@ -31,12 +32,14 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     test_data = [(doc_features(doc, category), category) for (doc, category) in test_set]
 
     classifier = nltk.classify.NaiveBayesClassifier.train(train_data)
-    testss(classifier)  # 0.86826
+    # testss(classifier)  # 0.86826
+    with open(os.path.join(model_path, 'nb_classifier.pkl'), 'wb') as f:
+        pickle.dump(classifier, f)
     print 'NB test_accuracy is %.7f' % nltk.classify.accuracy(classifier, test_data) # 1.00
 
-    svm_classifier = nltk.SklearnClassifier(LinearSVC()).train(train_data)
-    testss(svm_classifier)  # 0.85858
-    print 'SVM test_accuracy is %.7f' % nltk.classify.accuracy(svm_classifier, test_data) # 0.9869338
+    #svm_classifier = nltk.SklearnClassifier(LinearSVC()).train(train_data)
+    #testss(svm_classifier)  # 0.85858
+    #print 'SVM test_accuracy is %.7f' % nltk.classify.accuracy(svm_classifier, test_data) # 0.9869338
 
     # dTree_classifier = nltk.classify.DecisionTreeClassifier.train(train_data)
     # testss(dTree_classifier) # 0.00798
@@ -46,8 +49,8 @@ def train_native_bayes_classifier(m_features, post_list, vocab_set=None):
     # testss(maxent_classifier) # 0.37325
     # print 'MaxentClassifier test_accuracy is %.7f' % nltk.classify.accuracy(maxent_classifier, test_data) # 0.0836237
 
-    with open(os.path.join(model_path, 'nb_classifier.pkl'), 'wb') as f:
-        pickle.dump(classifier, f)
+    #with open(os.path.join(model_path, 'nb_classifier.pkl'), 'wb') as f:
+        # pickle.dump(classifier, f)
 
 def testss(classifier):
     with open(os.path.join(model_path, 'all_words.pkl'), 'rb') as f:
@@ -85,6 +88,7 @@ def classify_text(txt, classifier, all_words):
 获取保存的模型
 '''
 def get_model():
+    import pickle
     with open(os.path.join(model_path, 'nb_classifier.pkl'), 'rb') as f:
         nb_classifier = pickle.load(f)
     return nb_classifier

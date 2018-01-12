@@ -12,13 +12,9 @@ __author__ = 'lch02'
 
 # 模型存储位置
 model_path = os.path.join(os.path.abspath('..'), 'model')
-
 feature_path = os.path.join(os.path.abspath('..'), 'features')
-# eng_f_path = r'/Users/lch/Desktop/pycharm/Bayes/features'
 material_path =  os.path.join(os.path.abspath('..'), 'material')
-# eng_m_path = r'/Users/lch/Desktop/pycharm/Bayes/material'
 test_path =  os.path.join(os.path.abspath('..'), 'test')
-# eng_test_path = r'/Users/lch/Desktop/pycharm/Bayes/test'
 verify_path = os.path.join(os.path.abspath('..'), 'verify')
 
 # tf-idf阈值

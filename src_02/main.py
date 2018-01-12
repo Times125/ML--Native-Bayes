@@ -6,21 +6,23 @@
 @Time:  2017/11/29 10:35
 @Description: 训练样本包括：环境类、政治类、经济类、文化类、技术类、安全类和能源类文本
 """
-import getopt
+import json
 import time
-import sys
-import os
+
+import nltk
 import codecs
-import re
 import socket
-import pickle
+import cPickle as pickle
+
+import re
 from openpyxl import load_workbook
+
 from config import *
 from nltk_bayes_classifier import import_features_from_lib, get_model
 from nltk_bayes_classifier import import_data_from_excel, train_native_bayes_classifier
 from export_data import build_features_lib
-from text_processing import text_parse
-from multiprocessing import Pool, Manager,Queue
+from text_processing import text_parse, regexp_tokenize
+from multiprocessing import Pool, Manager, Queue
 
 __author__ = 'Lich'
 
@@ -29,33 +31,57 @@ def main():
     classifier = get_model()
     with open(os.path.join(model_path, 'all_words.pkl'), 'rb') as f:
         all_words = pickle.load(f)
+    print 'load success!'
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('127.0.0.1', 9898))
+    s.bind(('127.0.0.1', 7003))
     s.listen(10)
     while True:
-        sock, addr = s.accept()
-        data = sock.recv(102400)
-        data = data.decode('utf-8').encode('utf-8')
-        if data is 'auto':
-            import_data_from_excel()
-            build_features_lib()
-            import_features_from_lib()  # 这是自己建立的语料库
-            train()
-            sock.send("complete auto!")
-            continue
-        res = classify_text(data, classifier, all_words)
-        sock.send(res)
+        try:
+            sock, addr = s.accept()
+            data = sock.recv(102400)
+            data = data.decode('utf-8').encode('utf-8')
+            """
+            if data is 'auto':
+                import_data_from_excel()
+                build_features_lib()
+                import_features_from_lib()  # 这是自己建立的语料库
+                train()
+                sock.send("complete auto!")
+                continue
+            """
+            res = classify_text(data, classifier, all_words)
+            print res
+            res_json = json.dumps(res).encode('utf-8')
+            sock.send(res_json)
+            sock.close()
+        except KeyboardInterrupt:
+            print 'Exit'
+            sock.send('error')
+            sock.close()
+            exit()
+        except:
+            print 'Error'
+            sock.send('error')
+            sock.close()
 
 
 def classify_text(txt, classifier, all_words):
-    res_word_list, v = text_parse(txt)
+    special_tag = {'.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’', '“', '”', '！', '：', '^', '/', ']','['}
+    pattern = r""" (?x)(?:[a-z]\.)+ 
+                  | \d+(?:\.\d+)?%?\w+
+                  | \w+(?:[-']\w+)*
+                  | (?:[,.;'"?():-_`])"""
+    word_list = regexp_tokenize(txt, pattern)
+    filter_word = [w for w in word_list if w not in special_tag]
     wait_for_class = {}
-    for item in res_word_list:
+    for item in filter_word:
         wait_for_class['contains(%s)' % item] = (item in all_words)
     res = classifier.classify(wait_for_class)
     return res
 
-
+"""
+训练模型
+"""
 def train():
     start_time = time.time()
     with open(os.path.join(model_path, 'features.pkl'), 'rb') as f:
@@ -87,6 +113,7 @@ def train():
     end_time = time.time()
     print 'method train() cost total time %.4f seconds' % (end_time - start_time)  #
 
+
 def deal_train_doc(dir_name, queue_pool):
     import os
     p_post_list = []
@@ -103,10 +130,10 @@ def deal_train_doc(dir_name, queue_pool):
     print len(p_post_list), dir_name
     queue_pool.put((p_post_list, p_vocab_set))
 
+
 '''
 创建程序必要的文件目录
 '''
-
 def check_dirs():
     f_path = os.path.join(feature_path)
     t_path = os.path.join(test_path)
@@ -129,10 +156,12 @@ def check_dirs():
         if not os.path.exists(t_path):
             os.makedirs(t_path)
 
+
 def tests():
     classifier = get_model()
     with open(os.path.join(model_path, 'all_words.pkl'), 'rb') as f:
         all_words = pickle.load(f)
+
     for dir_name in verifies:
         wb = load_workbook(os.path.join(verify_path, dir_name + r'.xlsx'))
         sheet = wb.get_sheet_by_name("sheet1")
@@ -152,11 +181,14 @@ def tests():
                 a += 1
     total_num = 0
     uncorrected = 0
+    tongc = {}
+    tongunc = {}
     for dir_name in verifies:
         file_path = os.path.join(verify_path, dir_name)
         file_num = len(os.listdir(file_path))
         total_num += file_num
         b = 0
+        c = 0
         for i in range(file_num):
             fn = os.path.join(file_path, str(b) + r'.txt')
             with codecs.open(fn, 'rb', 'utf-8') as reader:
@@ -164,17 +196,49 @@ def tests():
             res = classify_text(txt, classifier, all_words)
             if res != dir_name:
                 uncorrected += 1
+                c += 1
+                tongunc[dir_name] = c
                 print dir_name, ":", b, '.txt'
-            b += 1
+            else:
+                b += 1
+                tongc[dir_name] = b
+
     print total_num, '  ', uncorrected
+    print tongunc, '\n'
+    print tongc, '\n'
     print 'nb_classifier accuracy is : %.5f' % (1 - (uncorrected / float(total_num)))
+
+def testsss():
+    classifier = get_model()
+    with open(os.path.join(model_path, 'all_words.pkl'), 'rb') as f:
+        all_words = pickle.load(f)
+    path = os.path.join(os.path.abspath('..'), 'test_en_category')
+    files = os.listdir(path)
+    for i in files:
+        fn = os.path.join(path, i)
+        with codecs.open(fn, 'rb') as reader:
+            txt = reader.read().decode('utf-8')
+        special_tag = {'.', ',', '!', '#', '(', ')', '*', '`', ':', '?', '"', '‘', '’', '“', '”', '！', '：', '^', '/', ']', '['}
+        pattern = r""" (?x)(?:[a-z]\.)+ 
+                       | \d+(?:\.\d+)?%?\w+
+                       | \w+(?:[-']\w+)*
+                       | (?:[,.;'"?():-_`])"""
+
+        word_list = nltk.regexp_tokenize(txt, pattern)
+        filter_word = [w for w in word_list if w not in special_tag]
+        wait_for_class = {}
+        for item in filter_word:
+            wait_for_class['contains(%s)' % item] = (item in all_words)
+        res = classifier.classify(wait_for_class)
+        print res, '\n'
 
 
 if __name__ == '__main__':
     check_dirs()
-    # main()  # 运行程序
+    main()  # 运行程序
     # import_data_from_excel()
     # build_features_lib()
     # import_features_from_lib()
-    train()
+    # train()
     # tests()
+    # testsss()
